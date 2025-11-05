@@ -1,9 +1,16 @@
 import pandas as pd
 import streamlit as st
 import time
+
 start_time = time.time()
-df = pd.read_parquet("C:/Users/paulh/Desktop/projects/AAD/Aufragsdaten.parquet")
-df2 = pd.read_parquet("C:/Users/paulh/Desktop/projects/AAD/Positionsdaten.parquet")
+@st.cache_data
+def load():
+    
+    df = pd.read_parquet("C:/Uni/Analytics Application Development/Projekt/Auftragsdaten")
+    df2 = pd.read_parquet("C:/Uni/Analytics Application Development/Projekt/Positionsdaten")
+    return df, df2
+
+df, df2 = load()
 load_time = time.time()
 loading_time = load_time - start_time
 st.write(f"Daten geladen. Es hat {loading_time:.4f} Sekunden gedauert.")
@@ -22,7 +29,7 @@ auftragsdaten_numeric_columns = ["Forderung_Netto", "Empfehlung_Netto", "Einigun
 for column in auftragsdaten_numeric_columns:
     st.write(f"Statistische Daten für {column}:")
     st.write(df[column].describe())
-    
+
 processing_time = time.time() - load_time
 st.write(f"Datenverarbeitung dauerte: {processing_time:.4f} Sekunden")
 
