@@ -1,5 +1,6 @@
 p_data_exploration.py
-Aufragsdaten.parquet
-Positionsdaten.parquet
-Auftragsdaten.parquet
+resources/Auftragsdaten
+resources/Positionsdaten
+resources/Auftragsdaten_konvertiert
+resources/Positionsdaten_konvertiert
 .idea
