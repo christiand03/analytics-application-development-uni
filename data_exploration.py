@@ -5,9 +5,9 @@ import time
 start_time = time.time()
 @st.cache_data
 def load():
-    
-    df = pd.read_parquet("C:/Uni/Analytics Application Development/Projekt/Auftragsdaten")
-    df2 = pd.read_parquet("C:/Uni/Analytics Application Development/Projekt/Positionsdaten")
+
+    df = pd.read_parquet("C:/Users/paulh/Desktop/projects/AAD/analytics-application-development-uni/Auftragsdaten.parquet")
+    df2 = pd.read_parquet("C:/Users/paulh/Desktop/projects/AAD/analytics-application-development-uni/Positionsdaten.parquet")
     return df, df2
 
 df, df2 = load()
