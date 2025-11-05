@@ -22,13 +22,45 @@ b = df2.head(100)
 
 st.write("Auftragsdaten")
 st.dataframe(a)
+st.write(df.dtypes)
+
 st.write("Positionsdaten")
 st.dataframe(b)
+st.write(df2.dtypes)
 
+
+st.write("-----------------------Auftragsdaten-----------------------")
 auftragsdaten_numeric_columns = ["Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto", "DH_ID", "Differenz_vor_Zeitwert_Netto"]
 for column in auftragsdaten_numeric_columns:
     st.write(f"Statistische Daten für {column}:")
     st.write(df[column].describe())
+
+st.write("-----------------------Positionsdaten-----------------------")
+positionsdaten_numeric_columns = ["Menge", "Menge_Einigung", "EP", "EP_Einigung", "Forderung_Netto", "Einigung_Netto"]
+for column in positionsdaten_numeric_columns:
+    st.write(f"Statistische Daten für {column}:")
+    st.write(df2[column].describe())
+
+df_unique = df[["DH_ID", "Land", "Schadenart_Name", "Falltyp_Name", "Gewerk_Name", "Kundengruppe"]]
+
+for col in df_unique.columns:
+    
+    print(f"--- Tabelle für Spalte: '{col}' ---")
+    
+    unique_values = df_unique[col].unique()
+    tabelle_pro_spalte = pd.DataFrame(unique_values, columns=[col])
+    st.dataframe(tabelle_pro_spalte)
+
+
+df2_unique = df2[["Mengeneinheit", "Menge", "Menge_Einigung", "Bemerkung"]]
+
+for col in df2_unique.columns:
+    
+    print(f"--- Tabelle für Spalte: '{col}' ---")
+    
+    unique_values = df2_unique[col].unique()
+    tabelle_pro_spalte = pd.DataFrame(unique_values, columns=[col])
+    st.dataframe(tabelle_pro_spalte)
 
 processing_time = time.time() - load_time
 st.write(f"Datenverarbeitung dauerte: {processing_time:.4f} Sekunden")
