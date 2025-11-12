@@ -9,12 +9,18 @@ df.info(memory_usage='deep')
 df2.info(memory_usage='deep')
 
 
-None_placeholder = ["-", "(leer)", "(null)", "wird vergeben", "unbekannter HW"]
+None_placeholder = ["-", "(leer)", "(null)", "wird vergeben", "unbekannter HW", "Allgemeine Standardbeschreibungen"]
 for placeholder in None_placeholder:
     df = df.replace(placeholder, pd.NA)
     df2 = df2.replace(placeholder, pd.NA)
 
+# Replace Typing Error in Schadensart_Name
+df = df.replace("Betriebsunterbrechnung", "Betriebsunterbrechung")
 
+# Replace Typing Error in Falltyp_Name
+df = df.replace("Überpannung Heizung", "Überspannung Heizung")
+df = df.replace("Kfz", "KFZ")
+df = df.replace("Schliessanlagen", "Schließanlagen")
 
 # Converting Object Types for df
 columns_to_convert = ['Land', 'PLZ_SO', 'PLZ_HW', 'PLZ_VN', 'address1_postalcode', 
