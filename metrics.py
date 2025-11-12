@@ -39,4 +39,21 @@ def allgemeine_statistiken_num(input_df):
 
     return statistiken
 
-print(allgemeine_statistiken_num(df))
+def plausibilitaetscheck_forderung_einigung(input_df):
+    statistik = []
+    count = 0
+    for index, row in input_df.iterrows():
+        if round(row['Einigung_Netto'], 2) > round(row['Forderung_Netto'], 2):
+            count += 1
+            difference = round(row['Einigung_Netto'] - row['Forderung_Netto'],2)
+            statistik.append(difference)
+            #print(f"Forderung: {row['Forderung_Netto']:.2f}, Einigung: {row['Einigung_Netto']:.2f}")
+    
+    if count > 0:
+        avg = sum(statistik) / len(statistik)
+    else:
+        avg = 0
+    
+    return count, avg
+
+print(plausibilitaetscheck_forderung_einigung(df))
