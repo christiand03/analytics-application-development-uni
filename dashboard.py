@@ -64,7 +64,7 @@ with nav_col2:
             # Style für die inaktiven/nicht ausgewählten Buttons
             "nav-link": {
                 "font-size": "14px",
-                "color": "#888",
+                "color": "#c1c1c1",
                 "padding": "0.5rem 1.3rem",
                 "margin": "0 0.1rem",
                 "border-radius": "999px",
@@ -80,7 +80,7 @@ with nav_col2:
             # Style für den aktiven/ausgewählten Button
             "nav-link-selected": {
                 "background-color": "#442D7B",
-                "color": "white",
+                "color": "#c1c1c1",
                 "font-weight": "bold",
                 "font-size": "15px",
                 "border-radius": "999px",
