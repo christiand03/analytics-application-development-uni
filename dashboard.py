@@ -24,7 +24,9 @@ st.markdown("""
 
 
 # --- HEADER ---
-st.image("assets/logo.png")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("assets/logo.png")
 
 
 # --- NAVIGATION ---
@@ -39,7 +41,6 @@ selected = option_menu(
         "container": {
             "padding": "5px!important",
             "background-color": "transparent",
-            "margin-top": "1rem",
         },
         "icon": {
             "color": "#c1c1c1",
