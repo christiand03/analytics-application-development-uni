@@ -1,45 +1,92 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from app_pages import page1, page2, page3, page4
+from app_pages import page1, page2, page3, page4, page5
 
-st.set_page_config(page_icon="🛡️", layout="wide")
+# --- SEITENKONFIGURATION ---
+st.set_page_config(
+    page_title="Data Quality Dashboard",
+    page_icon="assets/logo.png",
+    layout="wide"
+)
 
-st.title("Data Quality Dashboard")
+# --- CSS-INJEKTION FÜR KOMPAKTES LAYOUT & STYLING ---
+st.markdown("""
+    <style>
+        div.block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        header {
+            visibility: hidden;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
+# --- HEADER ---
+st.image("assets/logo.png")
+
 
 # --- NAVIGATION ---
-# Die Magie passiert hier!
 selected = option_menu(
-    menu_title=None,  # Erforderlich, aber kann auf None gesetzt werden
-    options=["Page 1", "Page 2", "Page 3", "Page 4"],  # Namen der Seiten
-    icons=["house", "shield-check", "search", "graph-up-arrow"],  # Optionale Bootstrap Icons
-    menu_icon="cast",  # Optional
-    default_index=0,  # Seite, die standardmäßig angezeigt wird
+    menu_title=None,
+    options=["Startseite","Numerische Daten", "Textuelle Daten", "Plausibilitätscheck", "Detailansicht"],
+    icons=["house", "graph-up-arrow", "bar-chart-steps", "pie-chart", "clipboard2-data"],
+    menu_icon="cast",
+    default_index=0,
     orientation="horizontal",
     styles={
-        "container": {"padding": "0!important", "background-color": "#fafafa"},
-        "icon": {"color": "orange", "font-size": "25px"},
-        "nav-link": {
-            "font-size": "18px",
-            "color": "#000000",
-            "text-align": "left",
-            "margin": "0px",
-            "--hover-color": "#eee",
+        "container": {
+            "padding": "5px!important",
+            "background-color": "transparent",
+            "margin-top": "1rem",
         },
+        "icon": {
+            "color": "#c1c1c1",
+            "font-size": "20px"
+        },
+        # Style für die inaktiven/nicht ausgewählten Buttons
+        "nav-link": {
+            "font-size": "15px",
+            "color": "#888",
+            "background-color": "transparent",
+            "border": "1px solid #222",
+            "border-radius": "4px",  # <-- GEÄNDERT: Nur sehr leicht abgerundet
+            "margin": "0px 5px",
+            "padding": "8px 20px",
+            "flex-grow": "1",
+            "display": "flex",
+            "justify-content": "center",
+            "align-items": "center",
+            "gap": "10px",
+            "--hover-color": "#2a2a2f",
+        },
+        # Style für den aktiven/ausgewählten Button
         "nav-link-selected": {
-            "background-color": "#02ab21",
-            "color": "white"
-            },
-        
+            "background-color": "#007bff",
+            "color": "white",
+            "font-weight": "bold",
+            "font-size": "15px",
+            "padding": "8px 20px",
+            "border": "1px solid #007bff",
+            "border-radius": "4px",  # <-- GEÄNDERT: Nur sehr leicht abgerundet
+            "box-shadow": "0 2px 5px rgba(0,0,0,0.2)", # <-- HINZUGEFÜGT: Schatteneffekt
+            "display": "flex",
+            "justify-content": "center",
+            "align-items": "center",
+            "gap": "10px",
+        },
     },
 )
 
 # --- SEITEN-ROUTING ---
-# Basierend auf der Auswahl in der Navigation wird die entsprechende Seite geladen
-if selected == "Page 1":
+if selected == "Startseite":
     page1.show_page()
-elif selected == "Page 2":
+elif selected == "Numerische Daten":
     page2.show_page()
-elif selected == "Page 3":
+elif selected == "Textuelle Daten":
     page3.show_page()
-elif selected == "Page 4":
+elif selected == "Plausibilitätscheck":
     page4.show_page()
+elif selected == "Detailansicht":
+    page5.show_page()
