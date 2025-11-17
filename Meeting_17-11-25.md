@@ -1,71 +1,42 @@
 #### 
 
-- Über zeitliche Abstände mit Key Facts gut
-- wahrscheinlich wird monatlich
 
-- Kundengruppenfokus? Warum nach typen? Begründen in der Arbeit
+- Key Facts: Veränderung über zeitlichen Abstand darstellen
+- Alle Entscheidungen, die wir treffen, im Report begründen (siehe Kundengruppenfokus)
+- Dashboard: Aggregation nach Kundengruppe
+- Bedingung: Einigung dürfen nicht größer sein als Forderungen
+- Ziel: Nur anzeigen, nicht korrigieren (Data Cleaning Zwischenschritte um invalide Werte zu löschen)
+- Metrik: Absolutwerte im betrachteten Zeitraum
+- Dateninput: Daten kommen aus zwei Kanälen (Email/manuell/OCR und maschinell)
+- Metrik: Sauberkeit der Daten vom Kunden pro Kundengruppe
+- Info: KVA_Rechnungsnummer pro Land unique (Wichtig sonst ab in Knast) Fehlerquelle: Race-condition
+- Zeitspalte wird zur Verfügung gestellt
+- Metrik: Kva_RechnungsID muss unqiue sein
+- Info: Positionsdaten: Bezeichnung (nach 165 Zeichen über gesamte Zeile wird abgeschnitten) Datenfehler ab 2023 -> Fehler bei Azure -> Wurde umgestellt
+- TODO: Extra Spalte mit Regex Wort finden: Skonto, Rabatt, Nachlass etc. (Positionsdaten Bezeichnung) -> Boolean Spalte, ob negative Position erlaubt
+- TODO: Alle Ausprägungen überprüfen (False, aber negativ wäre Fehler & True, aber positiv wäre Fehler)
+- TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
+- TODO: Wie sauber wird die Gewerk_Name gesetzt?
+- TODO: Passt das Gewerk zur Firma?
+- TODO: Sinnvolle Gruppierung für Feature Engineering
+- Info: Anzahl Aufträge ohne Positionsdaten -> Wenn Versicherer anfrage stellt, dass eine Prüfung erfolgen soll ohne Prüfdokument -> 1€ Proformabeleg wird erstellt
+- TODO: Prüfen, wie viele Proformabelege es gibt
+- Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum
+- Info: adress1_postalcode kommt aus einer anderen Datenbank
+- Info: Negative Beträge inkorrekt, außer gesamter Forderungsbetrag, Empfehlung und Einigung negativ (Auftragsart: Gutschrift) 
+- Info: 0.01€ - 1€ sind Proformabelege
+- Metrik: Zeilen ab 50.000€ Forderungen ausgeben (manuelle Durchsicht)
+- TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
+- Info: Jeder Kunde hat unterschiedliches System für Schadensnummer (Gibt auch Kunden, die kein einheitliches Schema) -> Wörter dahintern sind gewollt
+- Info: Schadensnummer kann ausgeklammert werden -> macht andere Gruppe
+- Info: Alle ID Spalten sind reine DatenbankID´s (Enthalten keine Informationen)
+- Info: Differenz_vor_Zeitwert_Netto: Differenz Forderung und Einigung
+- TODO: Abgleich Positionsdaten und Auftragsdaten: Summe zwischen Position und Auftrag | Metrik: Anzahl Aufträge ohne Position
+- TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt
 
-- Einigung größer als Forderung ist ein Fehler
-
-- Ziel: Nur anzeigen, nicht korrigieren
-- Interessant ist Menge an Daten
-
-- zwei Datenkanäle (Email und maschinell)
-
-Datenqualitätsfälle (Für uns nur Kundengruppen interessant)
-- Kundengruppe: Wie sauber sind die Daten die über den Kunden reinkommen (Auftragseingang nach der Kundengruppe)
-- Kollegenspezifisch: Wann oder Wer gibt Daten ein und wann macht wer Fehler
-
-- 3 Länder als Kunden bei KVA RechnungsID, die jeweils anfangen
-- KVA Rechnungnummer muss pro Land unique sein
-
-- Zeitspalte wird zur Verfügungestellt
-
-- KvaRechID muss unique sein
-
-- Positionsdaten: Bezeichnung Datenfehler ab 2023 -> Fehler bei Azure -> Wurde umgestellt
-- Wie oft ist da Müll drin?
-
-- Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
-- Wie sauber wird die Gewerk_Name gesetzt?
-- Passt das Gewerk zur Firma?
-- Gruppieren
-- Data Mining Algorithmen
-
-- Anzahl Aufträge ohne Positionsdaten -> Wenn Versicherer anfrage stellt, dass eine Prüfung erfolgen soll ohne Prüfdokument
--> 1€ Proformabeleg wird erstellt
-- Prüfen, wie viele Proformabelege es gibt
-
-- Wie größ ist die Steigerung von Position der Belege? -> Arbeitslast bzw. Arbeitszeit wird länger
-- 
-
-- adress1_postalcode kommt aus einer anderen Datenbank
-
-- negativbeträge dürfen nicht sein -> Es gibt Gutschriften (Wenn alle Position negativ sind)
-- 0.01€ - 1€ sind Proformabelege
-- ab 50.000€ was ist der Grund?
-- Währungsabweichung
-
-- Jeder Kunde hat unterschiedliches System für Schadensnummer
-- Gibt auch Kunden, die kein einheitliches Schema
-- Schadensnummer kann ausgeklammert werden -> macht andere Gruppe
-
-- Auftrags_ID sind reine DatenbankID Spalten
-
-- Differenz_vor_Zeitwert_Netto: Differenz Forderung und Einigung
-
-- Positionsdaten und Auftragsdaten abgleichen auch interessant
-
-- manuelle Betrag = Empfehlung 
-
-Dashboard:
-
+# Dashboard:
+- Fehlerquelle darstellen
 - Wie viele Aufträge hat man pro Zeitraum (monat als kleinste Einheit)
-- Kategorie: Was ist nicht sauber? (Buchhaltung, ...)
-- Auf Tagebene, wann wurden Positionsdaten nicht korrekt erfasst?
-- Balkendiagramm -> draufklicken -> welche Aufträge sind falsch (Kundengruppe filtern) -> Was ist das für ein Fehler? (Buchfuhrung, Positionarten,...)
-- Wie viele Datenpunkte pro Woche?
+- Timestamps für Fehler: Wann wurden Fehler gemacht?
 - Größte Kategorie: Jahr
-- Fehlerquote aggregieren über alle Datenarten, aber auch in Detail 
-- Man kann auf Daten klicken und es werden detailierte Informationen angezeigt
-- 
+- Wie viele Fehler pro Zeile und pro Spalte
