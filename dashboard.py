@@ -24,60 +24,75 @@ st.markdown("""
 
 
 # --- HEADER ---
-st.image("assets/logo.png")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("assets/logo.png")
 
 
 # --- NAVIGATION ---
-selected = option_menu(
-    menu_title=None,
-    options=["Startseite","Numerische Daten", "Textuelle Daten", "Plausibilitätscheck", "Detailansicht"],
-    icons=["house", "graph-up-arrow", "bar-chart-steps", "pie-chart", "clipboard2-data"],
-    menu_icon="cast",
-    default_index=0,
-    orientation="horizontal",
-    styles={
-        "container": {
-            "padding": "5px!important",
-            "background-color": "transparent",
-            "margin-top": "1rem",
+nav_col1, nav_col2, nav_col3 = st.columns([1, 4, 1])
+with nav_col2:
+    selected = option_menu(
+        menu_title=None,
+        options=[
+            "Startseite",
+            "Numerische Daten",
+            "Textuelle Daten",
+            "Plausibilitätscheck",
+            "Detailansicht"
+        ],
+        icons=[
+            "house",
+            "graph-up-arrow",
+            "bar-chart-steps",
+            "pie-chart",
+            "clipboard2-data"
+        ],
+        menu_icon="cast",
+        default_index=0,
+        orientation="horizontal",
+        styles={
+            "container": {
+                "padding": "0.3rem",
+                "background-color": "transparent",
+                "border-radius": "999px",
+                "border": "1px solid #e5e7eb",
+            },
+            "icon": {
+                "font-size": "18px",
+            },
+            # Style für die inaktiven/nicht ausgewählten Buttons
+            "nav-link": {
+                "font-size": "14px",
+                "color": "#c1c1c1",
+                "padding": "0.5rem 1.3rem",
+                "margin": "0 0.1rem",
+                "border-radius": "999px",
+                "border": "none",
+                "background-color": "transparent",
+                "display": "flex",
+                "justify-content": "center",
+                "align-items": "center",
+                "gap": "10px",
+                "transition": "all 0.2s ease-in-out",
+                "--hover-color": "#2a2a2f",
+            },
+            # Style für den aktiven/ausgewählten Button
+            "nav-link-selected": {
+                "background-color": "#442D7B",
+                "color": "#c1c1c1",
+                "font-weight": "bold",
+                "font-size": "15px",
+                "border-radius": "999px",
+                "box-shadow": "0 4px 10px rgba(0,0,0,0.2)",
+                "display": "flex",
+                "justify-content": "center",
+                "align-items": "center",
+                "gap": "10px",
+            },
         },
-        "icon": {
-            "color": "#c1c1c1",
-            "font-size": "20px"
-        },
-        # Style für die inaktiven/nicht ausgewählten Buttons
-        "nav-link": {
-            "font-size": "15px",
-            "color": "#888",
-            "background-color": "transparent",
-            "border": "1px solid #222",
-            "border-radius": "4px",  # <-- GEÄNDERT: Nur sehr leicht abgerundet
-            "margin": "0px 5px",
-            "padding": "8px 20px",
-            "flex-grow": "1",
-            "display": "flex",
-            "justify-content": "center",
-            "align-items": "center",
-            "gap": "10px",
-            "--hover-color": "#2a2a2f",
-        },
-        # Style für den aktiven/ausgewählten Button
-        "nav-link-selected": {
-            "background-color": "#007bff",
-            "color": "white",
-            "font-weight": "bold",
-            "font-size": "15px",
-            "padding": "8px 20px",
-            "border": "1px solid #007bff",
-            "border-radius": "4px",  # <-- GEÄNDERT: Nur sehr leicht abgerundet
-            "box-shadow": "0 2px 5px rgba(0,0,0,0.2)", # <-- HINZUGEFÜGT: Schatteneffekt
-            "display": "flex",
-            "justify-content": "center",
-            "align-items": "center",
-            "gap": "10px",
-        },
-    },
-)
+    )
+
 
 # --- SEITEN-ROUTING ---
 if selected == "Startseite":
