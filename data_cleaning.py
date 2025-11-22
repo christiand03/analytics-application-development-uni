@@ -1,8 +1,14 @@
 import pandas as pd
 import numpy as np
 
+print("Loading Data...")
 df = pd.read_parquet("resources/Auftragsdaten")
 df2 = pd.read_parquet("resources/Positionsdaten")
+df3 = pd.read_parquet("resources/Auftragsdaten_Zeit")
+
+df = pd.merge(df, df3, on='KvaRechnung_ID', how='left')
+df = df.drop(["Auftrag_ID_y", "Schadensnummer_y"], axis=1)
+df = df.rename(columns={'Auftrag_ID_x': 'AuftragID', 'Schadensnummer_x': 'Schadensnummer'})
 
 print(f"Memory usage before converting:")
 df.info(memory_usage='deep')

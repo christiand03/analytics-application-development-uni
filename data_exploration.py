@@ -46,7 +46,7 @@ df_unique = df[["DH_ID", "Land", "Schadenart_Name", "Falltyp_Name", "Gewerk_Name
 st.write("------ Unique Values für Auftragsdaten ------")
 for col in df_unique.columns:
     
-    print(f"--- Tabelle für Spalte: '{col}' ---")
+    st.write(f"--- Tabelle für Spalte: '{col}' ---")
     
     unique_values = df_unique[col].unique()
     tabelle_pro_spalte = pd.DataFrame(unique_values, columns=[col])
@@ -58,7 +58,7 @@ df2_unique = df2[["Mengeneinheit", "Menge", "Menge_Einigung", "Bemerkung"]]
 st.write("------ Unique Values für Positionsdaten ------")
 for col in df2_unique.columns:
     
-    print(f"--- Tabelle für Spalte: '{col}' ---")
+    st.write(f"--- Tabelle für Spalte: '{col}' ---")
     
     unique_values = df2_unique[col].unique()
     tabelle_pro_spalte = pd.DataFrame(unique_values, columns=[col])
@@ -68,12 +68,12 @@ for col in df2_unique.columns:
 
 st.write("------ Value Counts für Auftragsdaten ------")
 for col in df.columns:
-    print("--- Value Count für Spalte: '{col}' ---")
+    st.write("--- Value Count für Spalte: '{col}' ---")
     st.write(df[col].value_counts())
 
 st.write("------ Value Counts für Positionsdaten ------")
 for col in df2.columns:
-    print("--- Value Count für Spalte: '{col}' ---")
+    st.write("--- Value Count für Spalte: '{col}' ---")
     st.write(df2[col].value_counts())
 
 
