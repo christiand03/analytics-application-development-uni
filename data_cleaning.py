@@ -79,5 +79,16 @@ df.info(memory_usage='deep')
 df2.info(memory_usage='deep')
 
 
+# Add boolean column to check for discount
+keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Minderung", "Gutschein", "Erlass", "Storno", "Kulanz"]
+
+pattern = '|'.join(keywords)
+df2['ist_Abzug'] = df2['Bemerkung'].str.contains(pattern, case=False, regex=True, na=False)
+
+normal_position = (df['Einigung_Netto'] > 0) & (df['ist_abzug'] == False)
+discount_position = (df['Einigung_Netto'] < 0) & (df['ist_abzug'] == True)
+
+df['plausibel'] = normal_position | discount_position
+
 df.to_parquet("resources/Auftragsdaten_konvertiert")
 df2.to_parquet("resources/Positionsdaten_konvertiert")
