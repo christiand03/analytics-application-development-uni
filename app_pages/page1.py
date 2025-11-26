@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 
-def show_page():
+def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
 
     # --- KPI-BEREICH (6 Kacheln) ---
     kpi_cols = st.columns(6)

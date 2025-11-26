@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-def show_page():
-
+def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
+    
     # --- KPIs ---
     kpi_cols = st.columns(6)
     with kpi_cols[0]: st.metric(label="Verkäufe (EUR)", value="15.4k", delta="2.1k")
