@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 
 print("Loading Data...")
-df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
-#df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
+#df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
+df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
 print("Data loaded.")
 
 # wird nur wiederverwendet
@@ -142,13 +142,35 @@ def position_count(input_df):
     return position_count
 
 # if everything is negative then its allowed, otherwise its false
-def einigung_negativ(df):
+def false_negative_df(df):
     einigung_negative = df['Einigung_Netto'] < 0
-    all_negative = (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0)
-    false_data = df[einigung_negative & ~all_negative]
-    error_count = len(false_data)
+    else_negative = (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0)
+    einigung_false_data = df[einigung_negative & ~else_negative]
 
+    empfehlung_negative = df['Empfehlung_Netto'] < 0
+    else_negative = (df['Forderung_Netto'] < 0) & (df['Einigung_Netto'] < 0)
+    empfehlung_false_data = df[empfehlung_negative & ~else_negative]
+
+    forderung_negative = df['Forderung_Netto'] < 0
+    else_negative = (df['Einigung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0)
+    forderung_false_data = df[forderung_negative & ~else_negative]
+
+    error_count = len(einigung_false_data) + len(empfehlung_false_data) + len(forderung_false_data)
     return error_count
+
+# same for df2, total error count can contain multiple errors for the same row so total error count != row count with errors
+def false_negative_df2(df2):
+    count_menge_neg = (df2['Menge'] < 0).sum()
+    count_menge_einigung_neg = (df2['Menge_Einigung'] < 0).sum()
+
+    error_ep = ((df2['EP'] < 0) & (df2['EP_Einigung'] >= 0)).sum()
+    error_ep_einigung = ((df2['EP_Einigung'] < 0) & (df2['EP'] >= 0)).sum()
+
+    error_forderung = ((df2['Forderung_Netto'] < 0) & (df2['Einigung_Netto'] >= 0)).sum()
+    error_einigung = ((df2['Einigung_Netto'] < 0) & (df2['Forderung_Netto'] >= 0)).sum()
+
+    total_errors = (count_menge_neg + count_menge_einigung_neg + error_ep + error_ep_einigung + error_forderung + error_einigung)
+    return total_errors
 
 # gives dataframe of all values above 50k
 def above_50k(df):
@@ -168,5 +190,4 @@ def check_zeitwert(df):
     return zeitwert_error
             
 
-length = len(check_zeitwert(df))
-print(length)
+print(false_negative_df2(df2))
