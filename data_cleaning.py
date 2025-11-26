@@ -85,10 +85,10 @@ keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Min
 pattern = '|'.join(keywords)
 df2['ist_Abzug'] = df2['Bemerkung'].str.contains(pattern, case=False, regex=True, na=False)
 
-normal_position = (df['Einigung_Netto'] > 0) & (df['ist_abzug'] == False)
-discount_position = (df['Einigung_Netto'] < 0) & (df['ist_abzug'] == True)
+normal_position = (df2['Einigung_Netto'] > 0) & (df2['ist_Abzug'] == False)
+discount_position = (df2['Einigung_Netto'] < 0) & (df2['ist_Abzug'] == True)
 
-df['plausibel'] = normal_position | discount_position
+df2['Plausibel'] = normal_position | discount_position
 
 df.to_parquet("resources/Auftragsdaten_konvertiert")
 df2.to_parquet("resources/Positionsdaten_konvertiert")

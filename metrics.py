@@ -6,6 +6,7 @@ df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
 #df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
 print("Data loaded.")
 
+# wird nur wiederverwendet
 def ratio_null_values_column(input_df):
     length_df = len(input_df)
     ratio_dict = {}
@@ -16,6 +17,7 @@ def ratio_null_values_column(input_df):
     
     return ratio_dict
 
+# wird nur wiederverwendet
 def ratio_null_values_rows(input_df, relevant_columns=None):
     if relevant_columns is None:
         df_to_check = input_df
@@ -31,12 +33,13 @@ def ratio_null_values_rows(input_df, relevant_columns=None):
 
     return row_ratio
 
+# gibt die Anzahl und wahlweise auch den dataframe aus wo eine Test-Kundengruppe verwendet wurde
 def Kundengruppe_containing_test(df):
     anzahl_test = len(df[df['Kundengruppe'].str.contains('test', case=False, na=False)])
     #test_Kundengruppen = df[df['Kundengruppe'].str.contains('test', case=False, na=False)]
     return anzahl_test
 
-
+# Allgemeine Statistiken für numerische Spalten als dictionary, könnte als dataframe erweitert werden
 def allgemeine_statistiken_num(input_df):
     statistiken = {}
     
@@ -56,6 +59,7 @@ def allgemeine_statistiken_num(input_df):
 
     return statistiken
 
+# checkt ob einigung > forderung; gibt liste der fehlerhaften Datensätze, die anzahl und die durchschnittliche Abweichung zurück 
 def plausibilitaetscheck_forderung_einigung(input_df):
     statistik = []
     count = 0
@@ -71,8 +75,9 @@ def plausibilitaetscheck_forderung_einigung(input_df):
     else:
         avg = 0
     
-    return count, avg
+    return statistik, count, avg
 
+# Checkt ob die uniquen IDs auch wirklich unique sind
 def uniqueness_check(df, df2):
     kvarechnung_id_is_unique = df['KvaRechnung_ID'].is_unique
     position_id_is_unique = df2['Position_ID'].is_unique
@@ -84,9 +89,11 @@ def count_rows(input_df):
     count = len(input_df)
     return count
 
+# deprecated
 def split_dataframe(input_df, chunks=5):
     return np.array_split(input_df, chunks)
 
+# row-/column-wise none ratio metric
 def data_cleanliness(input_df):
     # needs to be set by Frontend
     group_by_col = "Kundengruppe"
@@ -111,15 +118,18 @@ def data_cleanliness(input_df):
 
         return grouped_col_ratios, grouped_row_ratios
 
+# to group by the selected column
 def groupby_col(input_df, col):
     input_df_grouped = input_df.groupby(col)
 
     return input_df_grouped
 
-def discount_check(df):
-    potential_errors = (~df['plausibel']).sum()
+# to check if a row is falsely positive or negative
+def discount_check(df2):
+    potential_errors = (~df2['Plausibel']).sum()
     return potential_errors
 
+# give the dataframe of Proformabelege and the count
 def proformabelege(df):
     proforma = df[df['Einigung_Netto'].between(0.01, 1)]
     proforma_count = len(proforma)
@@ -131,6 +141,7 @@ def position_count(input_df):
     print(type(position_count))
     return position_count
 
+# if everything is negative then its allowed, otherwise its false
 def einigung_negativ(df):
     einigung_negative = df['Einigung_Netto'] < 0
     all_negative = (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0)
@@ -139,14 +150,23 @@ def einigung_negativ(df):
 
     return error_count
 
+# gives dataframe of all values above 50k
 def above_50k(df):
     suspicious_data = df[df['Einigung_Netto'] >= 50000]
     return suspicious_data
 
-# def check_zeitwert(df):
-#     for index, row in df.iterrows():
-#         if row['Forderung_Netto'] - row['Einigung_Netto'] != 0:
+# checks if Zeitwert is different to the difference of Forderung - Einigung
+def check_zeitwert(df):
+    zeitwert_error = [] # positive = not enough difference, negative = too much difference
+    count = 0
+    for index, row in df.iterrows():
+        if round(row['Forderung_Netto'], 2) - round(row['Einigung_Netto'], 2) != round(row['Differenz_vor_Zeitwert_Netto'], 2):
+            count += 1
+            difference = round(row['Forderung_Netto'] - row['Einigung_Netto'], 2) - round(row['Differenz_vor_Zeitwert_Netto'], 2)
+            zeitwert_error.append(difference)
+    
+    return zeitwert_error
             
 
-
-print(einigung_negativ(df))
+length = len(check_zeitwert(df))
+print(length)

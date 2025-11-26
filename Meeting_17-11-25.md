@@ -26,7 +26,7 @@
 - Info: adress1_postalcode kommt aus einer anderen Datenbank
 - Info: Negative Beträge inkorrekt, außer gesamter Forderungsbetrag, Empfehlung und Einigung negativ (Auftragsart: Gutschrift) 
 - Info: 0.01€ - 1€ sind Proformabelege
-- Metrik: Zeilen ab 50.000€ Forderungen ausgeben (manuelle Durchsicht)
+- Metrik: Zeilen ab 50.000€ Forderungen ausgeben (manuelle Durchsicht) /// erledigt: above_50k
 - TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
 - Info: Jeder Kunde hat unterschiedliches System für Schadensnummer (Gibt auch Kunden, die kein einheitliches Schema) -> Wörter dahintern sind gewollt
 - Info: Schadensnummer kann ausgeklammert werden -> macht andere Gruppe
