@@ -3,24 +3,25 @@
 
 - Key Facts: Veränderung über zeitlichen Abstand darstellen
 - Alle Entscheidungen, die wir treffen, im Report begründen (siehe Kundengruppenfokus)
-- Dashboard: Aggregation nach Kundengruppe
-- Bedingung: Einigung dürfen nicht größer sein als Forderungen
+- Dashboard: Aggregation nach Kundengruppe  /// erledigt: groupby_col() -> erlaubt gruppierung nach allen Spalten
+- Bedingung: Einigung dürfen nicht größer sein als Forderungen /// erledigt: plausibilitaetscheck_forderung_einigung(input_df)
 - Ziel: Nur anzeigen, nicht korrigieren (Data Cleaning Zwischenschritte um invalide Werte zu löschen)
-- Metrik: Absolutwerte im betrachteten Zeitraum
+- Metrik: Absolutwerte im betrachteten Zeitraum /// erledigt: count_rows()
 - Dateninput: Daten kommen aus zwei Kanälen (Email/manuell/OCR und maschinell)
-- Metrik: Sauberkeit der Daten vom Kunden pro Kundengruppe
+- Metrik: Sauberkeit der Daten vom Kunden pro Kundengruppe /// erledigt: data_cleanliness()
 - Info: KVA_Rechnungsnummer pro Land unique (Wichtig sonst ab in Knast) Fehlerquelle: Race-condition
 - Zeitspalte wird zur Verfügung gestellt
-- Metrik: Kva_RechnungsID muss unqiue sein
+- Metrik: Kva_RechnungsID muss unqiue sein /// erledigt: uniqueness_check()
 - Info: Positionsdaten: Bezeichnung (nach 165 Zeichen über gesamte Zeile wird abgeschnitten) Datenfehler ab 2023 -> Fehler bei Azure -> Wurde umgestellt
-- TODO: Extra Spalte mit Regex Wort finden: Skonto, Rabatt, Nachlass etc. (Positionsdaten Bezeichnung) -> Boolean Spalte, ob negative Position erlaubt
-- TODO: Alle Ausprägungen überprüfen (False, aber negativ wäre Fehler & True, aber positiv wäre Fehler)
+- TODO: Extra Spalte mit Regex Wort finden: Skonto, Rabatt, Nachlass etc. (Positionsdaten Bezeichnung) -> Boolean Spalte, ob negative Position erlaubt /// erledigt: in data_cleaning.py wird eine neue spalte zum schluss hinzugefügt
+- TODO: Alle Ausprägungen überprüfen (False, aber negativ wäre Fehler & True, aber positiv wäre Fehler) /// erledigt: Spalte 'plausibel' in data_cleaning.py und in metrics.py: discount_check()
 - TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?
 - TODO: Passt das Gewerk zur Firma?
 - TODO: Sinnvolle Gruppierung für Feature Engineering
-- Info: Anzahl Aufträge ohne Positionsdaten -> Wenn Versicherer anfrage stellt, dass eine Prüfung erfolgen soll ohne Prüfdokument -> 1€ Proformabeleg wird erstellt
-- TODO: Prüfen, wie viele Proformabelege es gibt
+- Info: Anzahl Aufträge ohne Positionsdaten -> Wenn Versicherer anfrage stellt, dass eine Prüfung erfolgen soll ohne Prüfdokument -> 1€ Proformabeleg wird erstellt 
+- Info: Es gibt keine AuftragIDs die keine KvaRechnung_ID haben, Alle Aufträge mit Einigung zwischen 0.01 und 1 werden als Prüfungen deklariert 
+- TODO: Prüfen, wie viele Proformabelege es gibt /// erledigt: proformabelege()
 - Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum
 - Info: adress1_postalcode kommt aus einer anderen Datenbank
 - Info: Negative Beträge inkorrekt, außer gesamter Forderungsbetrag, Empfehlung und Einigung negativ (Auftragsart: Gutschrift) 
