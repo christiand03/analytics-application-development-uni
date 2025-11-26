@@ -1,9 +1,7 @@
-# dashboard.py
-
 import time
 import pandas as pd
 import streamlit as st
-import metrics as mt  # Stellen Sie sicher, dass metrics.py im selben Verzeichnis liegt
+import metrics as mt
 from streamlit_option_menu import option_menu
 from app_pages import page1, page2, page3, page4, page5
 
