@@ -14,7 +14,7 @@
 - Metrik: Kva_RechnungsID muss unqiue sein /// erledigt: uniqueness_check()
 - Info: Positionsdaten: Bezeichnung (nach 165 Zeichen über gesamte Zeile wird abgeschnitten) Datenfehler ab 2023 -> Fehler bei Azure -> Wurde umgestellt
 - TODO: Extra Spalte mit Regex Wort finden: Skonto, Rabatt, Nachlass etc. (Positionsdaten Bezeichnung) -> Boolean Spalte, ob negative Position erlaubt /// erledigt: in data_cleaning.py wird eine neue spalte zum schluss hinzugefügt
-- TODO: Alle Ausprägungen überprüfen (False, aber negativ wäre Fehler & True, aber positiv wäre Fehler) /// erledigt: Spalte 'plausibel' in data_cleaning.py und in metrics.py: discount_check()
+- TODO: Alle Ausprägungen überprüfen (False, aber negativ wäre Fehler & True, aber positiv wäre Fehler) /// erledigt: Spalte 'Plausibel' in data_cleaning.py und in metrics.py: discount_check()
 - TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?
 - TODO: Passt das Gewerk zur Firma?
@@ -24,16 +24,16 @@
 - TODO: Prüfen, wie viele Proformabelege es gibt /// erledigt: proformabelege()
 - Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum
 - Info: adress1_postalcode kommt aus einer anderen Datenbank
-- Info: Negative Beträge inkorrekt, außer gesamter Forderungsbetrag, Empfehlung und Einigung negativ (Auftragsart: Gutschrift) 
+- Info: Negative Beträge inkorrekt, außer gesamter Forderungsbetrag, Empfehlung und Einigung negativ (Auftragsart: Gutschrift) /// erledigt: einigung_negativ()
 - Info: 0.01€ - 1€ sind Proformabelege
 - Metrik: Zeilen ab 50.000€ Forderungen ausgeben (manuelle Durchsicht) /// erledigt: above_50k
 - TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
 - Info: Jeder Kunde hat unterschiedliches System für Schadensnummer (Gibt auch Kunden, die kein einheitliches Schema) -> Wörter dahintern sind gewollt
 - Info: Schadensnummer kann ausgeklammert werden -> macht andere Gruppe
 - Info: Alle ID Spalten sind reine DatenbankID´s (Enthalten keine Informationen)
-- Info: Differenz_vor_Zeitwert_Netto: Differenz Forderung und Einigung
+- Info: Differenz_vor_Zeitwert_Netto: Differenz Forderung und Einigung /// erledigt: check_zeitwert()
 - TODO: Abgleich Positionsdaten und Auftragsdaten: Summe zwischen Position und Auftrag | Metrik: Anzahl Aufträge ohne Position
-- TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt
+- TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt (machen wir das überhaupt noch?)
 
 # Dashboard:
 - Fehlerquelle darstellen
@@ -41,3 +41,16 @@
 - Timestamps für Fehler: Wann wurden Fehler gemacht?
 - Größte Kategorie: Jahr
 - Wie viele Fehler pro Zeile und pro Spalte
+
+
+
+To-Do:
+- data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte?
+- Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren
+- TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
+- TODO: Wie sauber wird die Gewerk_Name gesetzt?
+- TODO: Passt das Gewerk zur Firma?
+- TODO: Sinnvolle Gruppierung für Feature Engineering
+- Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum
+- TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
+- TODO: Aufgaben aus dem Kanban Board beachten
