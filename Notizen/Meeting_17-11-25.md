@@ -48,7 +48,7 @@
 
 
 To-Do:
-- data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte?
+- data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte? -> Gesamtanzahl an gefundenen Fehlern 
 - Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren
 - TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?

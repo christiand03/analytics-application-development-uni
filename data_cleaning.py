@@ -83,7 +83,7 @@ df2.info(memory_usage='deep')
 keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Minderung", "Gutschein", "Erlass", "Storno", "Kulanz"]
 
 pattern = '|'.join(keywords)
-df2['ist_Abzug'] = df2['Bemerkung'].str.contains(pattern, case=False, regex=True, na=False)
+df2['ist_Abzug'] = df2['Bezeichnung'].str.contains(pattern, case=False, regex=True, na=False)
 
 normal_position = (df2['Einigung_Netto'] > 0) & (df2['ist_Abzug'] == False)
 discount_position = (df2['Einigung_Netto'] < 0) & (df2['ist_Abzug'] == True)
