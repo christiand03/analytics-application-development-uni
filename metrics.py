@@ -191,3 +191,64 @@ def check_zeitwert(df):
             
 
 print(false_negative_df2(df2))
+
+def positions_per_order_over_time(positions_df, orders_df, time_col="CRMEingangszeit"):
+    """
+    Berechnet die durchschnittliche Anzahl an Positionen pro Auftrag je Monat.
+
+    Args:
+        positions_df: Positionsdaten mit Spalten 'KvaRechnung_ID' und 'Position_ID'.
+        orders_df: Auftragsdaten mit Spalte 'KvaRechnung_ID' und einer Zeitspalte.
+        time_col: Name der Zeitspalte in orders_df (z.B. 'CRMEingangszeit').
+
+    Returns:
+        DataFrame mit Spalten:
+        - 'Zeitperiode' (z.B. '2023-01')
+        - 'Avg_Positionen_pro_Auftrag'
+        - 'Total_Positionen'
+        - 'Anzahl_Auftraege'
+        - 'Growth_rate_%' (prozentuale Veränderung der Avg-Positionen zum Vormonat)
+    """
+
+    # Positionen pro Auftrag zählen
+    pos_counts = (
+        positions_df
+        .groupby("KvaRechnung_ID")["Position_ID"]
+        .count()
+        .reset_index(name="Positionen_pro_Auftrag")
+    )
+
+    # Zeitspalte vorbereiten
+    orders = orders_df[["KvaRechnung_ID", time_col]].copy()
+    orders = orders.dropna(subset=[time_col])
+    orders[time_col] = pd.to_datetime(orders[time_col])
+
+    # Zeitperiode (Monat) bestimmen
+    orders["Zeitperiode"] = orders[time_col].dt.to_period("M").astype(str)
+
+    # Positionen an Aufträge mergen
+    merged = orders.merge(pos_counts, on="KvaRechnung_ID", how="left")
+    merged["Positionen_pro_Auftrag"] = merged["Positionen_pro_Auftrag"].fillna(0)
+
+    # Aggregation je Zeitperiode
+    result = (
+        merged
+        .groupby("Zeitperiode")["Positionen_pro_Auftrag"]
+        .agg(["mean", "sum", "count"])
+        .reset_index()
+    )
+
+    result = result.sort_values("Zeitperiode")
+
+    result = result.rename(
+        columns={
+            "mean": "Avg_Positionen_pro_Auftrag",
+            "sum": "Total_Positionen",
+            "count": "Anzahl_Auftraege"
+        }
+    )
+
+    # prozentuale Veränderung der durchschnittlichen Positionsanzahl
+    result["Growth_rate_%"] = result["Avg_Positionen_pro_Auftrag"].pct_change() * 100
+
+    return result

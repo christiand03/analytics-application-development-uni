@@ -11,11 +11,19 @@ start_time = time.time()
 def load():
     df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
     df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
-    return df, df2
+    df_time = pd.read_parquet("resources/Auftragsdaten_Zeit")
+    return df, df2, df_time
 
-df, df2 = load()
+df, df2, df_time = load()
 load_time = time.time()
 loading_time = load_time - start_time
+
+orders_merged = df.merge(
+    df_time[["KvaRechnung_ID", "CRMEingangszeit"]],
+    on="KvaRechnung_ID",
+    how="left"
+)
+
 
 
 # --- METRIKEN BERECHNEN ---
@@ -64,6 +72,12 @@ metrics_combined = {
     "kvarechnung_id_is_unique": kva_id_unique,
     "position_id_is_unique": pos_id_unique
 }
+print("Calculating positions per order over time...")
+positions_over_time_df = mt.positions_per_order_over_time(
+    positions_df=df2,
+    orders_df=orders_merged,
+    time_col="CRMEingangszeit"
+)
 print("All metrics calculated.")
 
 # --- SEITENKONFIGURATION ---

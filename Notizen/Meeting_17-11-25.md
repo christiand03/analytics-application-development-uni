@@ -35,6 +35,9 @@
 - TODO: Abgleich Positionsdaten und Auftragsdaten: Summe zwischen Position und Auftrag | Metrik: Anzahl Aufträge ohne Position
 - TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt (machen wir das überhaupt noch?)
 
+- Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum /// erledigt: positions_per_order_over_time()
+
+
 # Dashboard:
 - Fehlerquelle darstellen
 - Wie viele Aufträge hat man pro Zeitraum (monat als kleinste Einheit)
@@ -51,6 +54,5 @@ To-Do:
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?
 - TODO: Passt das Gewerk zur Firma?
 - TODO: Sinnvolle Gruppierung für Feature Engineering
-- Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum
 - TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
 - TODO: Aufgaben aus dem Kanban Board beachten
