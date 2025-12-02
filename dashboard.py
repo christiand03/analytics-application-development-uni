@@ -47,12 +47,12 @@ metrics_df1 = {
     "grouped_row_ratios": grouped_row_ratios_df1,
     "proforma_belege_df": proforma_df,
     "proforma_belege_count": proforma_count,
-    "einigung_negativ_count": mt.einigung_negativ(df),
     "above_50k_df": mt.above_50k(df),
     "zeitwert_errors_list": zeitwert_errors_list,
     "zeitwert_errors_count": len(zeitwert_errors_list),
     "error_frequency_weekday_hour": error_freq_df,
 }
+#    "einigung_negativ_count": mt.einigung_negativ(df), fehlt
 
 # Metriken für den zweiten DataFrame (df2 - Positionsdaten)
 print("Calculating metrics for df2 (Positionsdaten)...")
