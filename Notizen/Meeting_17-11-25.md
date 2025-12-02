@@ -36,6 +36,7 @@
 - TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt (machen wir das überhaupt noch?)
 
 - Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum /// erledigt: positions_per_order_over_time()
+- Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren // error_frequency_by_weekday_hour()
 
 
 # Dashboard:
@@ -49,7 +50,6 @@
 
 To-Do:
 - data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte? -> Gesamtanzahl an gefundenen Fehlern 
-- Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren
 - TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?
 - TODO: Passt das Gewerk zur Firma?
