@@ -1,6 +1,84 @@
+import time
+import pandas as pd
 import streamlit as st
+import metrics as mt
 from streamlit_option_menu import option_menu
 from app_pages import page1, page2, page3, page4, page5
+
+# --- Data Loading ---
+start_time = time.time()
+@st.cache_data
+def load():
+    df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
+    df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
+    return df, df2
+
+df, df2 = load()
+load_time = time.time()
+loading_time = load_time - start_time
+
+
+
+
+# --- METRIKEN BERECHNEN ---
+
+# Metriken für den ersten DataFrame (df - Auftragsdaten)
+print("Calculating metrics for df1 (Auftragsdaten)...")
+plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
+zeitwert_errors_list = mt.check_zeitwert(df)
+proforma_df, proforma_count = mt.proformabelege(df)
+grouped_col_ratios_df1, grouped_row_ratios_df1 = mt.data_cleanliness(df)
+error_freq_df = mt.error_frequency_by_weekday_hour(
+    df,
+    time_col="CRMEingangszeit",
+    relevant_columns=None
+)
+
+metrics_df1 = {
+    "row_count": mt.count_rows(df),
+    "null_ratio_cols": mt.ratio_null_values_column(df),
+    "null_ratio_rows": mt.ratio_null_values_rows(df),
+    "test_kundengruppen_anzahl": mt.Kundengruppe_containing_test(df),
+    "statistiken_num": mt.allgemeine_statistiken_num(df),
+    "plausi_forderung_einigung_list": plausi_diff_list,
+    "plausi_forderung_einigung_count": plausi_count,
+    "plausi_forderung_einigung_avg_diff": plausi_avg,
+    "grouped_col_ratios": grouped_col_ratios_df1,
+    "grouped_row_ratios": grouped_row_ratios_df1,
+    "proforma_belege_df": proforma_df,
+    "proforma_belege_count": proforma_count,
+    "einigung_negativ_count": mt.einigung_negativ(df),
+    "above_50k_df": mt.above_50k(df),
+    "zeitwert_errors_list": zeitwert_errors_list,
+    "zeitwert_errors_count": len(zeitwert_errors_list),
+    "error_frequency_weekday_hour": error_freq_df,
+}
+
+# Metriken für den zweiten DataFrame (df2 - Positionsdaten)
+print("Calculating metrics for df2 (Positionsdaten)...")
+metrics_df2 = {
+    "row_count": mt.count_rows(df2),
+    "null_ratio_cols": mt.ratio_null_values_column(df2),
+    "null_ratio_rows": mt.ratio_null_values_rows(df2),
+    "statistiken_num": mt.allgemeine_statistiken_num(df2),
+    "discount_check_errors": mt.discount_check(df2),
+    "position_counts_per_rechnung": mt.position_count(df2)
+}
+
+# Metriken, die beide DataFrames benötigen
+print("Calculating combined metrics...")
+kva_id_unique, pos_id_unique = mt.uniqueness_check(df, df2)
+metrics_combined = {
+    "kvarechnung_id_is_unique": kva_id_unique,
+    "position_id_is_unique": pos_id_unique
+}
+print("Calculating positions per order over time...")
+positions_over_time_df = mt.positions_per_order_over_time(
+    df,
+    df2,
+    time_col="CRMEingangszeit"
+)
+print("All metrics calculated.")
 
 # --- SEITENKONFIGURATION ---
 st.set_page_config(
@@ -61,7 +139,6 @@ with nav_col2:
             "icon": {
                 "font-size": "18px",
             },
-            # Style für die inaktiven/nicht ausgewählten Buttons
             "nav-link": {
                 "font-size": "14px",
                 "color": "#c1c1c1",
@@ -77,7 +154,6 @@ with nav_col2:
                 "transition": "all 0.2s ease-in-out",
                 "--hover-color": "#2a2a2f",
             },
-            # Style für den aktiven/ausgewählten Button
             "nav-link-selected": {
                 "background-color": "#442D7B",
                 "color": "#c1c1c1",
@@ -95,13 +171,14 @@ with nav_col2:
 
 
 # --- SEITEN-ROUTING ---
+
 if selected == "Startseite":
-    page1.show_page()
+    page1.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
 elif selected == "Numerische Daten":
-    page2.show_page()
+    page2.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
 elif selected == "Textuelle Daten":
-    page3.show_page()
+    page3.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
 elif selected == "Plausibilitätscheck":
-    page4.show_page()
+    page4.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
 elif selected == "Detailansicht":
-    page5.show_page()
+    page5.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)

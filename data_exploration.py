@@ -68,12 +68,12 @@ for col in df2_unique.columns:
 
 st.write("------ Value Counts für Auftragsdaten ------")
 for col in df.columns:
-    st.write("--- Value Count für Spalte: '{col}' ---")
+    st.write(f"--- Value Count für Spalte: '{col}' ---")
     st.write(df[col].value_counts())
 
 st.write("------ Value Counts für Positionsdaten ------")
 for col in df2.columns:
-    st.write("--- Value Count für Spalte: '{col}' ---")
+    st.write(f"--- Value Count für Spalte: '{col}' ---")
     st.write(df2[col].value_counts())
 
 

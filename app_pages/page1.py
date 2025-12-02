@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 
-def show_page():
+def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
 
     # --- KPI-BEREICH (6 Kacheln) ---
     kpi_cols = st.columns(6)
@@ -40,7 +40,7 @@ def show_page():
             x = np.linspace(0, 10, 100)
             y = np.sin(x) + x/5 + np.random.randn(100) * 0.1
             chart_data = pd.DataFrame(y, index=x)
-            st.line_chart(chart_data, use_container_width=True)
+            st.line_chart(chart_data, width='stretch')
 
     with chart_col2:
         st.subheader("Chart im Stil der Skizze 2")
@@ -56,4 +56,4 @@ def show_page():
             x = np.linspace(-5, 5, 100)
             y = norm.pdf(x, 0, 1.5)
             chart_data2 = pd.DataFrame(y, index=x)
-            st.line_chart(chart_data2, use_container_width=True)
+            st.line_chart(chart_data2, width='stretch')
