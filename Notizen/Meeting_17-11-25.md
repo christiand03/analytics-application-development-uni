@@ -35,6 +35,10 @@
 - TODO: Abgleich Positionsdaten und Auftragsdaten: Summe zwischen Position und Auftrag | Metrik: Anzahl Aufträge ohne Position
 - TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt (machen wir das überhaupt noch?)
 
+- Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum /// erledigt: positions_per_order_over_time()
+- Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren // error_frequency_by_weekday_hour()
+
+
 # Dashboard:
 - Fehlerquelle darstellen
 - Wie viele Aufträge hat man pro Zeitraum (monat als kleinste Einheit)
@@ -45,12 +49,10 @@
 
 
 To-Do:
-- data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte?
-- Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren
+- data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte? -> Gesamtanzahl an gefundenen Fehlern 
 - TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?
 - TODO: Passt das Gewerk zur Firma?
 - TODO: Sinnvolle Gruppierung für Feature Engineering
-- Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum
 - TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
 - TODO: Aufgaben aus dem Kanban Board beachten

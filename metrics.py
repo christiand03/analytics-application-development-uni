@@ -191,3 +191,128 @@ def check_zeitwert(df):
             
 
 print(false_negative_df2(df2))
+
+def positions_per_order_over_time(df, df2, time_col="CRMEingangszeit"):
+    """
+    Berechnet die durchschnittliche Anzahl an Positionen pro Auftrag je Monat.
+
+    Args:
+        df: Auftragsdaten mit Spalte 'KvaRechnung_ID' und einer Zeitspalte.
+        df2: Positionsdaten mit Spalten 'KvaRechnung_ID' und 'Position_ID'.
+        time_col: Name der Zeitspalte in orders_df (z.B. 'CRMEingangszeit').
+
+    Returns:
+        DataFrame mit Spalten:
+        - 'Zeitperiode'
+        - 'Avg_Positionen_pro_Auftrag'
+        - 'Total_Positionen'
+        - 'Anzahl_Auftraege'
+        - 'Growth_rate_%'
+    """
+
+    # Positionen pro Auftrag zählen
+    pos_counts = (
+        df2
+        .groupby("KvaRechnung_ID")["Position_ID"]
+        .count()
+        .reset_index(name="Positionen_pro_Auftrag")
+    )
+
+    # Zeitspalte vorbereiten
+    orders = df[["KvaRechnung_ID", time_col]].copy()
+    orders = orders.dropna(subset=[time_col])
+    orders[time_col] = pd.to_datetime(orders[time_col], errors="coerce")
+    orders = orders.dropna(subset=[time_col])
+
+    # Zeitperiode (Monat) bestimmen
+    orders["Zeitperiode"] = orders[time_col].dt.to_period("M").astype(str)
+
+    # Positionen an Aufträge mergen
+    merged = orders.merge(pos_counts, on="KvaRechnung_ID", how="left")
+    merged["Positionen_pro_Auftrag"] = merged["Positionen_pro_Auftrag"].fillna(0)
+
+    # Aggregation je Zeitperiode
+    result = (
+        merged
+        .groupby("Zeitperiode")["Positionen_pro_Auftrag"]
+        .agg(["mean", "sum", "count"])
+        .reset_index()
+    )
+
+    result = result.sort_values("Zeitperiode")
+
+    result = result.rename(
+        columns={
+            "mean": "Avg_Positionen_pro_Auftrag",
+            "sum": "Total_Positionen",
+            "count": "Anzahl_Auftraege"
+        }
+    )
+
+    # prozentuale Veränderung der durchschnittlichen Positionsanzahl
+    result["Growth_rate_%"] = result["Avg_Positionen_pro_Auftrag"].pct_change() * 100
+
+    return result
+
+def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_columns=None):
+    """
+    Aggregiert die Fehlerhäufigkeit (NaN-Werte) nach Wochentag und Stunde.
+
+    Error-Definition:
+        Ein Auftrag gilt als fehlerhaft, wenn in mindestens einer der relevanten Spalten
+        ein NaN-Wert vorkommt.
+
+    Args:
+        df: Auftragsdaten-DataFrame (z.B. Auftragsdaten_konvertiert),
+            muss 'KvaRechnung_ID' und die Zeitspalte enthalten.
+        time_col: Name der Zeitspalte in df, z.B. 'CRMEingangszeit'.
+        relevant_columns: Liste der Spalten, die auf NaN geprüft werden sollen.
+                          Wenn None -> alle Spalten außer 'KvaRechnung_ID' und time_col.
+
+    Returns:
+        DataFrame mit Spalten:
+        - 'weekday'     : Name des Wochentags (Monday, Tuesday, ...)
+        - 'hour'        : Stunde (0–23)
+        - 'total_rows'  : Anzahl Aufträge in diesem Zeit-Slot
+        - 'error_rows'  : Anzahl fehlerhafter Aufträge in diesem Slot
+        - 'error_rate'  : Fehlerquote in Prozent
+    """
+
+    work_df = df.copy()
+
+    # Zeitspalte in datetime umwandeln
+    work_df[time_col] = pd.to_datetime(work_df[time_col], errors="coerce")
+    work_df = work_df.dropna(subset=[time_col])
+
+    # Wochentag + Stunde extrahieren
+    work_df["weekday"] = work_df[time_col].dt.day_name()
+    work_df["hour"] = work_df[time_col].dt.hour
+
+    # Relevante Spalten bestimmen
+    if relevant_columns is None:
+        exclude = {time_col, "KvaRechnung_ID", "weekday", "hour"}
+        relevant_columns = [c for c in work_df.columns if c not in exclude]
+
+    if not relevant_columns:
+        raise ValueError("Keine relevanten Spalten für die Fehlerprüfung gefunden.")
+
+    # Error = mind. ein NaN in den relevanten Spalten
+    work_df["has_error"] = work_df[relevant_columns].isna().any(axis=1)
+
+    result = (
+        work_df
+        .groupby(["weekday", "hour"])
+        .agg(
+            total_rows=("KvaRechnung_ID", "count"),
+            error_rows=("has_error", "sum"),
+        )
+        .reset_index()
+    )
+
+    result["error_rate"] = result["error_rows"] / result["total_rows"] * 100
+
+    weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    result["weekday"] = pd.Categorical(result["weekday"], categories=weekday_order, ordered=True)
+    result = result.sort_values(["weekday", "hour"])
+
+    return result

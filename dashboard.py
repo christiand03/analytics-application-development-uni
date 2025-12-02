@@ -18,6 +18,8 @@ load_time = time.time()
 loading_time = load_time - start_time
 
 
+
+
 # --- METRIKEN BERECHNEN ---
 
 # Metriken für den ersten DataFrame (df - Auftragsdaten)
@@ -26,6 +28,11 @@ plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_e
 zeitwert_errors_list = mt.check_zeitwert(df)
 proforma_df, proforma_count = mt.proformabelege(df)
 grouped_col_ratios_df1, grouped_row_ratios_df1 = mt.data_cleanliness(df)
+error_freq_df = mt.error_frequency_by_weekday_hour(
+    df,
+    time_col="CRMEingangszeit",
+    relevant_columns=None
+)
 
 metrics_df1 = {
     "row_count": mt.count_rows(df),
@@ -42,7 +49,8 @@ metrics_df1 = {
     "proforma_belege_count": proforma_count,
     "above_50k_df": mt.above_50k(df),
     "zeitwert_errors_list": zeitwert_errors_list,
-    "zeitwert_errors_count": len(zeitwert_errors_list)
+    "zeitwert_errors_count": len(zeitwert_errors_list),
+    "error_frequency_weekday_hour": error_freq_df,
 }
 #    "einigung_negativ_count": mt.einigung_negativ(df), fehlt
 
@@ -64,6 +72,12 @@ metrics_combined = {
     "kvarechnung_id_is_unique": kva_id_unique,
     "position_id_is_unique": pos_id_unique
 }
+print("Calculating positions per order over time...")
+positions_over_time_df = mt.positions_per_order_over_time(
+    df,
+    df2,
+    time_col="CRMEingangszeit"
+)
 print("All metrics calculated.")
 
 # --- SEITENKONFIGURATION ---
