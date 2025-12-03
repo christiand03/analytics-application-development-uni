@@ -135,26 +135,20 @@ def plausibilitaetscheck_forderung_einigung(input_df):
         
         Returns
         -------        
-        statistik: list
+        statistik: pandas.Series
             a list of all differences >0 as float values
         count: int  
             total number of rows with difference >0
         avg: float
             average difference over all found instances    
     """
-    statistik = []
-    count = 0
-    for index, row in input_df.iterrows():
-        if round(row['Einigung_Netto'], 2) > round(row['Forderung_Netto'], 2):
-            count += 1
-            difference = round(row['Einigung_Netto'] - row['Forderung_Netto'],2) 
-            statistik.append(difference)
-            #print(f"Forderung: {row['Forderung_Netto']:.2f}, Einigung: {row['Einigung_Netto']:.2f}")
-    
-    if count > 0:
-        avg = sum(statistik) / len(statistik)
-    else:
-        avg = 0
+    #set filter 
+    faulty_rows_mask = input_df['Einigung_Netto'].round(2) > input_df['Forderung_Netto'].round(2)
+    #count amount of positives
+    count = faulty_rows_mask.sum()
+
+    statistik = (input_df.loc[faulty_rows_mask, 'Einigung_Netto']-input_df.loc[faulty_rows_mask,'Forderung_Netto']).round(2)
+    avg = statistik.mean
     
     return statistik, count, avg
 
@@ -438,17 +432,12 @@ def check_zeitwert(df):
         DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
     Returns
     -------
-    zeitwert_error: list
-        List of all error values (float) found in the data frame
+    zeitwert_error: pandas.Series
+        Series of all error values (float) found in the data frame
     """
-    zeitwert_error = [] # positive = not enough difference, negative = too much difference
-    count = 0
-    for index, row in df.iterrows():
-        difference = round(row['Forderung_Netto'] - row['Einigung_Netto'], 2) - round(row['Differenz_vor_Zeitwert_Netto'], 2)
-        if difference != 0:
-            count += 1
-            zeitwert_error.append(difference)
     
+    difference = (df['Forderung_Netto'] - df['Einigung_Netto']).round(2) - (df['Differenz_vor_Zeitwert_Netto']).round(2)
+    zeitwert_error = difference[difference != 0] # positive = not enough difference, negative = too much difference
     return zeitwert_error
             
 
