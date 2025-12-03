@@ -322,8 +322,8 @@ def position_count(input_df):
     position_count: pandas.DataFrame
         DataFrame with the columns 'KvaRechnung_ID' and the amount of associated positions.  
     """
-    position_count = input_df.groupby('KvaRechnung_ID', observed=True)['Position_ID'].count().reset_index()
-    print(type(position_count))
+    position_count = input_df.groupby('KvaRechnung_ID', observed=False)['Position_ID'].count().reset_index().rename(columns={'Position_ID': 'PositionsAnzahl'})
+    #print(type(position_count))
     return position_count
 
 

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import metrics as mt
 
 print("Loading Data...")
 df = pd.read_parquet("resources/Auftragsdaten")
@@ -10,6 +11,10 @@ df = pd.merge(df, df3, on='KvaRechnung_ID', how='left')
 df = df.drop(["Auftrag_ID_y", "Schadensnummer_y"], axis=1)
 df = df.rename(columns={'Auftrag_ID_x': 'AuftragID', 'Schadensnummer_x': 'Schadensnummer'})
 
+#add int column with number of positions for every entry in Auftragsdaten
+df = pd.merge(df,mt.position_count(df2), on='KvaRechnung_ID', how='left')
+
+#checking effectivness of dtype changes, before state
 print(f"Memory usage before converting:")
 df.info(memory_usage='deep')
 df2.info(memory_usage='deep')
@@ -89,6 +94,9 @@ normal_position = (df2['Einigung_Netto'] > 0) & (df2['ist_Abzug'] == False)
 discount_position = (df2['Einigung_Netto'] < 0) & (df2['ist_Abzug'] == True)
 
 df2['Plausibel'] = normal_position | discount_position
+
+
+
 
 df.to_parquet("resources/Auftragsdaten_konvertiert")
 df2.to_parquet("resources/Positionsdaten_konvertiert")

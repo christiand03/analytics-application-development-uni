@@ -6,3 +6,4 @@ resources/Auftragsdaten_konvertiert
 resources/Positionsdaten_konvertiert
 .idea
 __pycache__
+testing.py

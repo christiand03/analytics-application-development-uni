@@ -24,27 +24,32 @@ print(f"Loaded Data in "+str(round(loading_time,2))+"s")
 
 # Metriken für den ersten DataFrame (df - Auftragsdaten)
 print("Calculating metrics for df1 (Auftragsdaten)...")
-calc_time_t1 = time.time()
+
+calc_time_start = time.time()
 plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
-calc_time_t2 = time.time()
-print("Calculated plausi_diff_list, plausi_count, plausi_avg in "+str(round(calc_time_t2-calc_time_t1,2))+"s") 
+print("Calculated plausi_diff_list, plausi_count, plausi_avg in "+str(round(time.time()-calc_time_start,2))+"s") 
+
+calc_time_start = time.time()
 zeitwert_errors_series = mt.check_zeitwert(df)
-calc_time_t1 = time.time()
-print("Calculated zeitwert_errors_list in "+str(round(calc_time_t1-calc_time_t2,2))+"s") 
+print("Calculated zeitwert_errors_list in "+str(round(time.time()-calc_time_start,2))+"s") 
+
+calc_time_start = time.time()
 proforma_df, proforma_count = mt.proformabelege(df)
-calc_time_t2 = time.time()
-print("Calculated proforma_df, proforma_count in "+str(round(calc_time_t2-calc_time_t1,2))+"s") 
+print("Calculated proforma_df, proforma_count in "+str(round(time.time()-calc_time_start,2))+"s") 
+
+calc_time_start = time.time()
 grouped_col_ratios_df1, grouped_row_ratios_df1 = mt.data_cleanliness(df)
-calc_time_t1 = time.time()
-print("Calculated grouped_col_ratios_df1, grouped_row_ratios_df1 in "+str(round(calc_time_t1-calc_time_t2,2))+"s") 
+print("Calculated grouped_col_ratios_df1, grouped_row_ratios_df1 in "+str(round(time.time()-calc_time_start,2))+"s") 
+
+calc_time_start = time.time()
 error_freq_df = mt.error_frequency_by_weekday_hour(
                                                     df,
                                                     time_col="CRMEingangszeit",
                                                     relevant_columns=None
                                                 )
-calc_time_t2 = time.time()
-print("Calculated error_freq_df (by weekday) in"+str(round(calc_time_t2-calc_time_t1,2))+"s") 
+print("Calculated error_freq_df (by weekday) in "+str(round(time.time()-calc_time_start,2))+"s") 
 
+calc_time_start = time.time()
 metrics_df1 = {
     "row_count": mt.count_rows(df),
     "null_ratio_cols": mt.ratio_null_values_column(df),
@@ -63,10 +68,12 @@ metrics_df1 = {
     "zeitwert_errors_count": zeitwert_errors_series.size,
     "error_frequency_weekday_hour": error_freq_df,
 }
+print("Calculated all other metics for df1 in "+str(round(time.time()-calc_time_start,2))+"s") 
 #    "einigung_negativ_count": mt.einigung_negativ(df), fehlt
 
 # Metriken für den zweiten DataFrame (df2 - Positionsdaten)
 print("Calculating metrics for df2 (Positionsdaten)...")
+calc_time_start = time.time()
 metrics_df2 = {
     "row_count": mt.count_rows(df2),
     "null_ratio_cols": mt.ratio_null_values_column(df2),
@@ -75,20 +82,24 @@ metrics_df2 = {
     "discount_check_errors": mt.discount_check(df2),
     "position_counts_per_rechnung": mt.position_count(df2)
 }
+print("Calculated all other metrics for df2 in "+str(round(time.time()-calc_time_start,2))+"s")
 
 # Metriken, die beide DataFrames benötigen
+calc_time_start = time.time()
 print("Calculating combined metrics...")
 kva_id_unique, pos_id_unique = mt.uniqueness_check(df, df2)
 metrics_combined = {
     "kvarechnung_id_is_unique": kva_id_unique,
     "position_id_is_unique": pos_id_unique
 }
-print("Calculating positions per order over time...")
+print("Calculated all combined metrics in "+str(round(time.time()-calc_time_start,2))+"s")
+calc_time_start = time.time()
 positions_over_time_df = mt.positions_per_order_over_time(
     df,
     df2,
     time_col="CRMEingangszeit"
 )
+print("Calculated all positions over time in "+str(round(time.time()-calc_time_start,2))+"s")
 print("All metrics calculated.")
 
 # --- SEITENKONFIGURATION ---
