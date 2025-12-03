@@ -16,7 +16,7 @@ def load():
 df, df2 = load()
 load_time = time.time()
 loading_time = load_time - start_time
-
+print(f"Loaded Data in "+str(round(loading_time,2))+"s")
 
 
 
@@ -24,15 +24,26 @@ loading_time = load_time - start_time
 
 # Metriken für den ersten DataFrame (df - Auftragsdaten)
 print("Calculating metrics for df1 (Auftragsdaten)...")
+calc_time_t1 = time.time()
 plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
+calc_time_t2 = time.time()
+print("Calculated plausi_diff_list, plausi_count, plausi_avg in"+str(round(calc_time_t2-calc_time_t1,2))+"s") 
 zeitwert_errors_list = mt.check_zeitwert(df)
+calc_time_t1 = time.time()
+print("Calculated zeitwert_errors_list in"+str(round(calc_time_t1-calc_time_t2,2))+"s") 
 proforma_df, proforma_count = mt.proformabelege(df)
+calc_time_t2 = time.time()
+print("Calculated proforma_df, proforma_count in"+str(round(calc_time_t2-calc_time_t1,2))+"s") 
 grouped_col_ratios_df1, grouped_row_ratios_df1 = mt.data_cleanliness(df)
+calc_time_t1 = time.time()
+print("Calculated grouped_col_ratios_df1, grouped_row_ratios_df1 in"+str(round(calc_time_t1-calc_time_t2,2))+"s") 
 error_freq_df = mt.error_frequency_by_weekday_hour(
-    df,
-    time_col="CRMEingangszeit",
-    relevant_columns=None
-)
+                                                    df,
+                                                    time_col="CRMEingangszeit",
+                                                    relevant_columns=None
+                                                )
+calc_time_t2 = time.time()
+print("Calculated error_freq_df (by weekday) in"+str(round(calc_time_t2-calc_time_t1,2))+"s") 
 
 metrics_df1 = {
     "row_count": mt.count_rows(df),

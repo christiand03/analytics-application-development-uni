@@ -126,7 +126,7 @@ def allgemeine_statistiken_num(input_df):
 
 
 def plausibilitaetscheck_forderung_einigung(input_df):
-    """Checks for diff between Einigung_Netto and Forderung_Netto for all rows in the given dataframe. Einigung > Forderung is assumed as significant.
+    """Checks for diff between Einigung_Netto and Forderung_Netto for all rows in the given dataframe. Einigung > Forderung is assumed as significant error.
 
         Paramters
         ---------
@@ -237,7 +237,7 @@ def data_cleanliness(input_df, group_by_col=None):
         return null_ratio_rows, null_ratio_cols
 
     else:
-        grouped = input_df.groupby(group_by_col)
+        grouped = input_df.groupby(group_by_col,observed=True)
         # Group for columns & rows
         grouped_null_counts = grouped.apply(lambda x: x.isnull().sum())
         grouped_null_rows = grouped.apply(lambda x: x.isnull().any(axis=1).sum())
@@ -267,7 +267,7 @@ def groupby_col(input_df, col):
     input_df_grouped: pandas.DataFrame 
         A grouped DataFrame.
     """
-    input_df_grouped = input_df.groupby(col)
+    input_df_grouped = input_df.groupby(col,observed=True)
 
     return input_df_grouped
 
@@ -328,7 +328,7 @@ def position_count(input_df):
     position_count: pandas.DataFrame
         DataFrame with the columns 'KvaRechnung_ID' and the amount of associated positions.  
     """
-    position_count = input_df.groupby('KvaRechnung_ID')['Position_ID'].count().reset_index()
+    position_count = input_df.groupby('KvaRechnung_ID', observed=True)['Position_ID'].count().reset_index()
     print(type(position_count))
     return position_count
 
@@ -475,7 +475,7 @@ def positions_per_order_over_time(df, df2, time_col="CRMEingangszeit"):
     # Positionen pro Auftrag zählen
     pos_counts = (
         df2
-        .groupby("KvaRechnung_ID")["Position_ID"]
+        .groupby("KvaRechnung_ID",observed=True)["Position_ID"]
         .count()
         .reset_index(name="Positionen_pro_Auftrag")
     )
@@ -496,7 +496,7 @@ def positions_per_order_over_time(df, df2, time_col="CRMEingangszeit"):
     # Aggregation je Zeitperiode
     result = (
         merged
-        .groupby("Zeitperiode")["Positionen_pro_Auftrag"]
+        .groupby("Zeitperiode",observed=True)["Positionen_pro_Auftrag"]
         .agg(["mean", "sum", "count"])
         .reset_index()
     )
@@ -564,7 +564,7 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
 
     result = (
         work_df
-        .groupby(["weekday", "hour"])
+        .groupby(["weekday", "hour"],observed=True)
         .agg(
             total_rows=("KvaRechnung_ID", "count"),
             error_rows=("has_error", "sum"),
