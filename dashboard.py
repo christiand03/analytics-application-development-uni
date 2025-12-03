@@ -25,10 +25,10 @@ print(f"Loaded Data in "+str(round(loading_time,2))+"s")
 # Metriken für den ersten DataFrame (df - Auftragsdaten)
 print("Calculating metrics for df1 (Auftragsdaten)...")
 calc_time_t1 = time.time()
-plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
+#plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
 calc_time_t2 = time.time()
 print("Calculated plausi_diff_list, plausi_count, plausi_avg in"+str(round(calc_time_t2-calc_time_t1,2))+"s") 
-zeitwert_errors_list = mt.check_zeitwert(df)
+#zeitwert_errors_list = mt.check_zeitwert(df)
 calc_time_t1 = time.time()
 print("Calculated zeitwert_errors_list in"+str(round(calc_time_t1-calc_time_t2,2))+"s") 
 proforma_df, proforma_count = mt.proformabelege(df)
@@ -51,16 +51,16 @@ metrics_df1 = {
     "null_ratio_rows": mt.ratio_null_values_rows(df),
     "test_kundengruppen_anzahl": mt.Kundengruppe_containing_test(df),
     "statistiken_num": mt.allgemeine_statistiken_num(df),
-    "plausi_forderung_einigung_list": plausi_diff_list,
-    "plausi_forderung_einigung_count": plausi_count,
-    "plausi_forderung_einigung_avg_diff": plausi_avg,
+    #"plausi_forderung_einigung_list": plausi_diff_list,
+    #"plausi_forderung_einigung_count": plausi_count,
+    #"plausi_forderung_einigung_avg_diff": plausi_avg,
     "grouped_col_ratios": grouped_col_ratios_df1,
     "grouped_row_ratios": grouped_row_ratios_df1,
     "proforma_belege_df": proforma_df,
     "proforma_belege_count": proforma_count,
     "above_50k_df": mt.above_50k(df),
-    "zeitwert_errors_list": zeitwert_errors_list,
-    "zeitwert_errors_count": len(zeitwert_errors_list),
+    #"zeitwert_errors_list": zeitwert_errors_list,
+    #"zeitwert_errors_count": len(zeitwert_errors_list),
     "error_frequency_weekday_hour": error_freq_df,
 }
 #    "einigung_negativ_count": mt.einigung_negativ(df), fehlt
