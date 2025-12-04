@@ -5,111 +5,129 @@ import metrics as mt
 from streamlit_option_menu import option_menu
 from app_pages import page1, page2, page3, page4, page5
 
-# --- Data Loading ---
-start_time = time.time()
-@st.cache_data
-def load():
-    df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
-    df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
-    return df, df2
-
-df, df2 = load()
-load_time = time.time()
-loading_time = load_time - start_time
-print(f"Loaded Data in "+str(round(loading_time,2))+"s")
-
-
-
-# --- METRIKEN BERECHNEN ---
-
-# Metriken für den ersten DataFrame (df - Auftragsdaten)
-print("Calculating metrics for df1 (Auftragsdaten)...")
-
-calc_time_start = time.time()
-plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
-print("Calculated plausi_diff_list, plausi_count, plausi_avg in "+str(round(time.time()-calc_time_start,2))+"s") 
-
-calc_time_start = time.time()
-zeitwert_errors_series = mt.check_zeitwert(df)
-print("Calculated zeitwert_errors_list in "+str(round(time.time()-calc_time_start,2))+"s") 
-
-calc_time_start = time.time()
-proforma_df, proforma_count = mt.proformabelege(df)
-print("Calculated proforma_df, proforma_count in "+str(round(time.time()-calc_time_start,2))+"s") 
-
-calc_time_start = time.time()
-grouped_col_ratios_df1, grouped_row_ratios_df1 = mt.data_cleanliness(df)
-print("Calculated grouped_col_ratios_df1, grouped_row_ratios_df1 in "+str(round(time.time()-calc_time_start,2))+"s") 
-
-calc_time_start = time.time()
-error_freq_df = mt.error_frequency_by_weekday_hour(
-                                                    df,
-                                                    time_col="CRMEingangszeit",
-                                                    relevant_columns=None
-                                                )
-print("Calculated error_freq_df (by weekday) in "+str(round(time.time()-calc_time_start,2))+"s") 
-
-calc_time_start = time.time()
-metrics_df1 = {
-    "row_count": mt.count_rows(df),
-    "null_ratio_cols": mt.ratio_null_values_column(df),
-    "null_ratio_rows": mt.ratio_null_values_rows(df),
-    "test_kundengruppen_anzahl": mt.Kundengruppe_containing_test(df),
-    "statistiken_num": mt.allgemeine_statistiken_num(df),
-    "plausi_forderung_einigung_list": plausi_diff_list,
-    "plausi_forderung_einigung_count": plausi_count,
-    "plausi_forderung_einigung_avg_diff": plausi_avg,
-    "grouped_col_ratios": grouped_col_ratios_df1,
-    "grouped_row_ratios": grouped_row_ratios_df1,
-    "proforma_belege_df": proforma_df,
-    "proforma_belege_count": proforma_count,
-    "above_50k_df": mt.above_50k(df),
-    "zeitwert_errors_list": zeitwert_errors_series,
-    "zeitwert_errors_count": zeitwert_errors_series.size,
-    "error_frequency_weekday_hour": error_freq_df,
-}
-print("Calculated all other metics for df1 in "+str(round(time.time()-calc_time_start,2))+"s") 
-#    "einigung_negativ_count": mt.einigung_negativ(df), fehlt
-
-# Metriken für den zweiten DataFrame (df2 - Positionsdaten)
-print("Calculating metrics for df2 (Positionsdaten)...")
-calc_time_start = time.time()
-metrics_df2 = {
-    "row_count": mt.count_rows(df2),
-    "null_ratio_cols": mt.ratio_null_values_column(df2),
-    "null_ratio_rows": mt.ratio_null_values_rows(df2),
-    "statistiken_num": mt.allgemeine_statistiken_num(df2),
-    "discount_check_errors": mt.discount_check(df2),
-    "position_counts_per_rechnung": mt.position_count(df2)
-}
-print("Calculated all other metrics for df2 in "+str(round(time.time()-calc_time_start,2))+"s")
-
-# Metriken, die beide DataFrames benötigen
-calc_time_start = time.time()
-print("Calculating combined metrics...")
-kva_id_unique, pos_id_unique = mt.uniqueness_check(df, df2)
-metrics_combined = {
-    "kvarechnung_id_is_unique": kva_id_unique,
-    "position_id_is_unique": pos_id_unique
-}
-print("Calculated all combined metrics in "+str(round(time.time()-calc_time_start,2))+"s")
-calc_time_start = time.time()
-positions_over_time_df = mt.positions_per_order_over_time(
-    df,
-    df2,
-    time_col="CRMEingangszeit"
-)
-print("Calculated all positions over time in "+str(round(time.time()-calc_time_start,2))+"s")
-print("All metrics calculated.")
-
-# --- SEITENKONFIGURATION ---
 st.set_page_config(
     page_title="Data Quality Dashboard",
     page_icon="assets/logo.png",
     layout="wide"
 )
 
-# --- CSS-INJEKTION FÜR KOMPAKTES LAYOUT & STYLING ---
+@st.cache_data
+def load():
+    df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
+    df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
+    return df, df2
+
+@st.cache_data
+def compute_metrics_df1():
+    print("Calculating metrics for df1 (Auftragsdaten)...")
+    df, _ = load()
+
+    calc_time_start = time.time()
+    plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
+    print("Calculated plausi_diff_list, plausi_count, plausi_avg in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+
+    calc_time_start = time.time()
+    zeitwert_errors_series = mt.check_zeitwert(df)
+    print("Calculated zeitwert_errors_list in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+
+    calc_time_start = time.time()
+    proforma_df, proforma_count = mt.proformabelege(df)
+    print("Calculated proforma_df, proforma_count in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+
+    calc_time_start = time.time()
+    grouped_col_ratios_df1, grouped_row_ratios_df1 = mt.data_cleanliness(df)
+    print("Calculated grouped_col_ratios_df1, grouped_row_ratios_df1 in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+
+    calc_time_start = time.time()
+    error_freq_df = mt.error_frequency_by_weekday_hour(
+        df,
+        time_col="CRMEingangszeit",
+        relevant_columns=None
+    )
+    print("Calculated error_freq_df (by weekday) in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+
+    calc_time_start = time.time()
+    metrics_df1 = {
+        "row_count": mt.count_rows(df),
+        "null_ratio_cols": mt.ratio_null_values_column(df),
+        "null_ratio_rows": mt.ratio_null_values_rows(df),
+        "test_kundengruppen_anzahl": mt.Kundengruppe_containing_test(df),
+        "statistiken_num": mt.allgemeine_statistiken_num(df),
+        "plausi_forderung_einigung_list": plausi_diff_list,
+        "plausi_forderung_einigung_count": plausi_count,
+        "plausi_forderung_einigung_avg_diff": plausi_avg,
+        "grouped_col_ratios": grouped_col_ratios_df1,
+        "grouped_row_ratios": grouped_row_ratios_df1,
+        "proforma_belege_df": proforma_df,
+        "proforma_belege_count": proforma_count,
+        "above_50k_df": mt.above_50k(df),
+        "zeitwert_errors_list": zeitwert_errors_series,
+        "zeitwert_errors_count": zeitwert_errors_series.size,
+        "error_frequency_weekday_hour": error_freq_df,
+    }
+    print("Calculated all other metrics for df1 in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+
+    return metrics_df1
+
+
+@st.cache_data
+def compute_metrics_df2():
+    """Teure Metriken für df2 (Positionsdaten) – gecached."""
+    print("Calculating metrics for df2 (Positionsdaten)...")
+    _, df2 = load()
+    calc_time_start = time.time()
+    metrics_df2 = {
+        "row_count": mt.count_rows(df2),
+        "null_ratio_cols": mt.ratio_null_values_column(df2),
+        "null_ratio_rows": mt.ratio_null_values_rows(df2),
+        "statistiken_num": mt.allgemeine_statistiken_num(df2),
+        "discount_check_errors": mt.discount_check(df2),
+        "position_counts_per_rechnung": mt.position_count(df2)
+    }
+    print("Calculated all metrics for df2 in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    return metrics_df2
+
+
+@st.cache_data
+def compute_metrics_combined():
+    """Metriken, die beide DataFrames brauchen – gecached."""
+    print("Calculating combined metrics...")
+    df, df2 = load()
+    calc_time_start = time.time()
+    kva_id_unique, pos_id_unique = mt.uniqueness_check(df, df2)
+    metrics_combined = {
+        "kvarechnung_id_is_unique": kva_id_unique,
+        "position_id_is_unique": pos_id_unique
+    }
+    print("Calculated all combined metrics in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    return metrics_combined
+
+
+@st.cache_data
+def compute_positions_over_time():
+    """Positionsanzahl pro Auftrag über Zeit – gecached."""
+    print("Calculating positions per order over time...")
+    df, df2 = load()
+    calc_time_start = time.time()
+    positions_over_time_df = mt.positions_per_order_over_time(
+        df,
+        df2,
+        time_col="CRMEingangszeit"
+    )
+    print("Calculated positions over time in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    return positions_over_time_df
+
+
+# CSS
 st.markdown("""
     <style>
         div.block-container {
@@ -122,14 +140,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-# --- HEADER ---
+# HEADER
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image("assets/logo.png")
 
-
-# --- NAVIGATION ---
+# NAVIGATION
 nav_col1, nav_col2, nav_col3 = st.columns([1, 4, 1])
 with nav_col2:
     selected = option_menu(
@@ -192,15 +208,41 @@ with nav_col2:
     )
 
 
-# --- SEITEN-ROUTING ---
+# SEITEN-ROUTING – Lazy Aufruf der Metriken
 
 if selected == "Startseite":
+    # Nur hier laden wir die Daten für die Seite (gecached)
+    start = time.time()
+    df, df2 = load()
+    metrics_df1 = compute_metrics_df1()
+    metrics_df2 = compute_metrics_df2()
+    metrics_combined = compute_metrics_combined()
     page1.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    print("page 1 render time:", round(time.time() - start, 2), "s")
+
 elif selected == "Numerische Daten":
+    start = time.time()
+    df, df2 = load()
+    metrics_df1 = compute_metrics_df1()
+    metrics_df2 = compute_metrics_df2()
+    metrics_combined = compute_metrics_combined()
     page2.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    print("page 2 render time:", round(time.time() - start, 2), "s")
+
 elif selected == "Textuelle Daten":
-    page3.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    # Seite ist leer
+    start = time.time()
+    page3.show_page()
+    print("page 3 render time:", round(time.time() - start, 2), "s")
+
 elif selected == "Plausibilitätscheck":
-    page4.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    # Seite ist leer
+    start = time.time()
+    page4.show_page()
+    print("page 4 render time:", round(time.time() - start, 2), "s")
+
 elif selected == "Detailansicht":
-    page5.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    # Seite ist leer
+    start = time.time()
+    page5.show_page()
+    print("page 5 render time:", round(time.time() - start, 2), "s")
