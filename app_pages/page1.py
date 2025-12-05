@@ -62,7 +62,7 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
                 )
                 .properties(height=28 * len(null_df), width="container")
             )
-            st.altair_chart(bar, use_container_width=True)
+            st.altair_chart(bar, width="stretch")
         else:
             st.info("Keine Nullwert-Informationen verfügbar.")
 
@@ -92,6 +92,6 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
                 )
                 .properties(height=240, width="container")
             )
-            st.altair_chart(heat, use_container_width=True)
+            st.altair_chart(heat, width="stretch")
         else:
             st.info("Keine Fehlerfrequenz-Daten verfügbar.")
