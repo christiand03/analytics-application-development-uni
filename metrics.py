@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
 
-print("Loading Data...")
-#df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
-df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
-print("Data loaded.")
+def load_data():
+    df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
+    df2 = pd.read_parquet("resources/Positionsdaten_konvertiert")
+    return df, df2
 
 # wird nur wiederverwendet
 def ratio_null_values_column(input_df):
@@ -568,3 +568,6 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
     result = result.sort_values(["weekday", "hour"])
 
     return result
+
+if __name__ == "__main__":
+    df, df2 = load_data()
