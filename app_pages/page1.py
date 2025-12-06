@@ -18,15 +18,15 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
     pos_unique = metrics_combined.get("position_id_is_unique", None)
 
     with kpi_cols[0]:
-        st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."))
+        st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).")
     with kpi_cols[1]:
-        st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."))
+        st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."), help="Anzahl Zeilen in Positionsdaten (df2).")
     with kpi_cols[2]:
-        st.metric(label="Zeilen mit Fehlern (df) [%]", value=f"{null_rows_df1:.2f}%")
+        st.metric(label="Fehlerquoten (df) [%]", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df.")
     with kpi_cols[3]:
-        st.metric(label="Zeilen mit Fehlern (df2) [%]", value=f"{null_rows_df2:.2f}%")
+        st.metric(label="Fehlerquoten (df2) [%]", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df2.")
     with kpi_cols[4]:
-        st.metric(label="Proforma-Belege", value=f"{proforma_count}")
+        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.")
     with kpi_cols[5]:
         uniq_text = (
             "OK" if (kva_unique is True and pos_unique is True) else
@@ -34,7 +34,7 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
              ("KVA nicht, Pos. ok" if (kva_unique is False and pos_unique is True) else
               ("n/v" if (kva_unique is None or pos_unique is None) else "beide nicht")))
         )
-        st.metric(label="Eindeutigkeit IDs", value=uniq_text)
+        st.metric(label="Eindeutigkeit IDs", value=uniq_text, help="Prüft Einzigartigkeit von KvaRechnung_ID (df) und Position_ID (df2).")
 
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 
