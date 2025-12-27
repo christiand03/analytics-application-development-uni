@@ -148,7 +148,7 @@ def plausibilitaetscheck_forderung_einigung(input_df):
     count = faulty_rows_mask.sum()
 
     statistik = (input_df.loc[faulty_rows_mask, 'Einigung_Netto']-input_df.loc[faulty_rows_mask,'Forderung_Netto']).round(2)
-    avg = statistik.mean
+    avg = statistik.mean()
     
     return statistik, count, avg
 
@@ -265,7 +265,7 @@ def groupby_col(input_df, col):
 
     return input_df_grouped
 
-
+# returns ~750K that cant be right
 def discount_check(df2):
     """Checks if a row in the 'Positionsdaten' data set does/doesn't describe a discount or similar and if the 'Einigung_Netto' and 'Forderung_Netto' information accurately reflects this (negative or positive values). 
     
@@ -571,3 +571,7 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
 
 if __name__ == "__main__":
     df, df2 = load_data()
+    a,b,c = plausibilitaetscheck_forderung_einigung(df)
+    print(type(a))
+    print(type(b))
+    print(type(c))
