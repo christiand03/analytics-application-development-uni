@@ -69,6 +69,7 @@ def compute_metrics_df1():
         "zeitwert_errors_list": zeitwert_errors_series,
         "zeitwert_errors_count": zeitwert_errors_series.size,
         "error_frequency_weekday_hour": error_freq_df,
+        "false_negative": mt.false_negative_df(df)
     }
     print("Calculated all other metrics for df1 in "
           f"{round(time.time() - calc_time_start, 2)}s")
@@ -82,13 +83,22 @@ def compute_metrics_df2():
     print("Calculating metrics for df2 (Positionsdaten)...")
     _, df2 = load()
     calc_time_start = time.time()
+    
+    plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df2)
+    print("Calculated plausi_diff_list, plausi_count, plausi_avg in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    
     metrics_df2 = {
         "row_count": mt.count_rows(df2),
         "null_ratio_cols": mt.ratio_null_values_column(df2),
         "null_ratio_rows": mt.ratio_null_values_rows(df2),
         "statistiken_num": mt.allgemeine_statistiken_num(df2),
         "discount_check_errors": mt.discount_check(df2),
-        "position_counts_per_rechnung": mt.position_count(df2)
+        "position_counts_per_rechnung": mt.position_count(df2),
+        "plausi_forderung_einigung_list": plausi_diff_list,
+        "plausi_forderung_einigung_count": plausi_count,
+        "plausi_forderung_einigung_avg_diff": plausi_avg,
+        "false_negative": mt.false_negative_df2(df2)
     }
     print("Calculated all metrics for df2 in "
           f"{round(time.time() - calc_time_start, 2)}s")
@@ -232,17 +242,28 @@ elif selected == "Numerische Daten":
 elif selected == "Textuelle Daten":
     # Seite ist leer
     start = time.time()
-    page3.show_page()
+    df, df2 = load()
+    metrics_df1 = compute_metrics_df1()
+    metrics_df2 = compute_metrics_df2()
+    metrics_combined = compute_metrics_combined()
+    page3.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
-    # Seite ist leer
     start = time.time()
-    page4.show_page()
+    df, df2 = load()
+    metrics_df1 = compute_metrics_df1()
+    metrics_df2 = compute_metrics_df2()
+    metrics_combined = compute_metrics_combined()
+    page4.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Detailansicht":
     # Seite ist leer
     start = time.time()
-    page5.show_page()
+    df, df2 = load()
+    metrics_df1 = compute_metrics_df1()
+    metrics_df2 = compute_metrics_df2()
+    metrics_combined = compute_metrics_combined()
+    page5.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
     print("page 5 render time:", round(time.time() - start, 2), "s")
