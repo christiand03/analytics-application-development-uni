@@ -9,6 +9,8 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
     zeitwert_error_count = metrics_df1.get("zeitwert_errors_count", 0)
     above_50k_df = metrics_df1.get("above_50k_df", mt.above_50k(df))
     above_50k_count = above_50k_df.size
+
+    auftraege_abgleich = metrics_combined.get("auftraege_abgleich")
     
     # --- KPIs ---
     kpi_cols = st.columns(2)
@@ -28,3 +30,6 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
     with chart_col2:
         st.subheader("Aufträge über 50.000€:")
         st.dataframe(above_50k_df)
+
+    st.subheader("Abgleich ob Positionssummen mit Auftragssummen übereinstimmen")
+    st.dataframe(auftraege_abgleich)

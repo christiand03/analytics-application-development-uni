@@ -50,6 +50,14 @@ def compute_metrics_df1():
     )
     print("Calculated error_freq_df (by weekday) in "
           f"{round(time.time() - calc_time_start, 2)}s")
+    
+    calc_time_start = time.time()
+    df_added = mt.handwerker_gewerke_outlier(df)
+    df_true = df_added[df_added['is_outlier'] == True].copy()
+    df_true['Check_Result'] = mt.check_keywords_vectorized(df_true)
+
+    print("Calculated craftsman/craft comparison in "
+          f"{round(time.time() - calc_time_start, 2)}s")
 
     calc_time_start = time.time()
     metrics_df1 = {
@@ -69,7 +77,9 @@ def compute_metrics_df1():
         "zeitwert_errors_list": zeitwert_errors_series,
         "zeitwert_errors_count": zeitwert_errors_series.size,
         "error_frequency_weekday_hour": error_freq_df,
-        "false_negative": mt.false_negative_df(df)
+        "false_negative": mt.false_negative_df(df),
+        #"mismatched_entries": mt.get_mismatched_entries(df), # vorher cuda installieren
+        "handwerker_gewerke_outlier": df_true,
     }
     print("Calculated all other metrics for df1 in "
           f"{round(time.time() - calc_time_start, 2)}s")
@@ -112,9 +122,11 @@ def compute_metrics_combined():
     df, df2 = load()
     calc_time_start = time.time()
     kva_id_unique, pos_id_unique = mt.uniqueness_check(df, df2)
+    auftraege_abgleich = mt.abgleich_auftraege(df, df2)
     metrics_combined = {
         "kvarechnung_id_is_unique": kva_id_unique,
-        "position_id_is_unique": pos_id_unique
+        "position_id_is_unique": pos_id_unique,
+        "auftraege_abgleich": auftraege_abgleich
     }
     print("Calculated all combined metrics in "
           f"{round(time.time() - calc_time_start, 2)}s")
@@ -165,7 +177,7 @@ with nav_col2:
             "Numerische Daten",
             "Textuelle Daten",
             "Plausibilitätscheck",
-            "Detailansicht"
+            "Data Drift"
         ],
         icons=[
             "house",
@@ -258,7 +270,7 @@ elif selected == "Plausibilitätscheck":
     page4.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
-elif selected == "Detailansicht":
+elif selected == "Data Drift":
     # Seite ist leer
     start = time.time()
     df, df2 = load()

@@ -698,9 +698,9 @@ def check_keywords_vectorized(df):
     'Leckageortung': ['leckage', 'ortung', 'rohrbruch', 'leck'],
     'Immobilien': ['immobilien', 'makler', 'wohnbau', 'real estate', 'verwaltung', 'property'],
     'Versicherung': ['versicherung', 'finanz', 'assekuranz', 'makler', 'agentur']
-}
+    }
     
-   
+    
     
     names = df['Handwerker_Name'].astype(str).str.lower()
     
@@ -735,6 +735,7 @@ def check_keywords_vectorized(df):
     )
     
     return final_result
+
 
 def abgleich_auftraege(df1, df2):
     """
@@ -813,8 +814,8 @@ if __name__ == "__main__":
 
 
     # Funktion aufrufen
-    ergebnis = abgleich_auftraege(df, df2)
     start_time = time.time()
+    ergebnis = abgleich_auftraege(df, df2)
     print("Aufträge mit Abweichungen:")
     print(ergebnis)
     end_time = time.time()
@@ -822,5 +823,6 @@ if __name__ == "__main__":
 
 
     df_added = handwerker_gewerke_outlier(df)
-    df_true = df_added[df_added['is_outlier'] == True]
+    df_true = df_added[df_added['is_outlier'] == True].copy()
     df_true['Check_Result'] = check_keywords_vectorized(df_true)
+    print(df_true)
