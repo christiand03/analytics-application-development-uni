@@ -15,9 +15,9 @@
 - Info: Positionsdaten: Bezeichnung (nach 165 Zeichen über gesamte Zeile wird abgeschnitten) Datenfehler ab 2023 -> Fehler bei Azure -> Wurde umgestellt
 - ~~TODO~~: Extra Spalte mit Regex Wort finden: Skonto, Rabatt, Nachlass etc. (Positionsdaten Bezeichnung) -> Boolean Spalte, ob negative Position erlaubt /// erledigt: in data_cleaning.py wird eine neue spalte zum schluss hinzugefügt
 - ~~TODO~~: Alle Ausprägungen überprüfen (False, aber negativ wäre Fehler & True, aber positiv wäre Fehler) /// erledigt: Spalte 'Plausibel' in data_cleaning.py und in metrics.py: discount_check()
-- TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
-- TODO: Wie sauber wird die Gewerk_Name gesetzt?
-- TODO: Passt das Gewerk zur Firma?
+- ~~TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname~~ (nicht zeit-nutzen sinnvoll)
+- TODO: Wie sauber wird die Gewerk_Name gesetzt? setzt chris um
+- ~~TODO: Passt das Gewerk zur Firma?~~ (Siehe eins darüber)
 - TODO: Sinnvolle Gruppierung für Feature Engineering
 - Info: Anzahl Aufträge ohne Positionsdaten -> Wenn Versicherer anfrage stellt, dass eine Prüfung erfolgen soll ohne Prüfdokument -> 1€ Proformabeleg wird erstellt 
 - Info: Es gibt keine AuftragIDs die keine KvaRechnung_ID haben, Alle Aufträge mit Einigung zwischen 0.01 und 1 werden als Prüfungen deklariert 
@@ -50,9 +50,7 @@
 
 To-Do:
 - data_cleanliness() erweitern? Nicht nur None als Fehler sondern auch fehlerhafte punkte? -> Gesamtanzahl an gefundenen Fehlern 
-- TODO: Positiondaten (Bezeichnung) + Handwerkername soll verknüpft werden zum Gewerkname
 - TODO: Wie sauber wird die Gewerk_Name gesetzt?
-- TODO: Passt das Gewerk zur Firma?
 - TODO: Sinnvolle Gruppierung für Feature Engineering
 - TODO: Mehr Informationen zu Metriken per Button zu Hidden Pages gelangen !
 - TODO: Aufgaben aus dem Kanban Board beachten
