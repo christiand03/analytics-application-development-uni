@@ -612,9 +612,9 @@ def get_mismatched_entries_fast(df, threshold=0.2):
 
 def abgleich_auftraege(df1, df2):
 
-    df2_sum = df2.groupby('Kva_RechnungID')[['Forderung_Netto', 'Einigung_Netto']].sum().reset_index()
+    df2_sum = df2.groupby('KvaRechnung_ID')[['Forderung_Netto', 'Einigung_Netto']].sum().reset_index()
 
-    merged = pd.merge(df1, df2_sum, on='Kva_RechnungID', how='left', suffixes=('_soll', '_ist'))
+    merged = pd.merge(df1, df2_sum, on='KvaRechnung_ID', how='left', suffixes=('_soll', '_ist'))
     merged.fillna(0, inplace=True)
     
     merged['Diff_Forderung'] = merged['Forderung_Netto_soll'] - merged['Forderung_Netto_ist']
@@ -627,10 +627,9 @@ def abgleich_auftraege(df1, df2):
     
     abweichungen = merged[mask_abweichung].copy()
     
-    result_df = abweichungen[['Kva_RechnungID', 'Diff_Forderung', 'Diff_Einigung']]
+    result_df = abweichungen[['KvaRechnung_ID', 'Diff_Forderung', 'Diff_Einigung']]
     
     return result_df
-
 
 
 if __name__ == "__main__":
