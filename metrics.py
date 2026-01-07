@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy as np
+import time
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity, paired_cosine_distances
+import torch
 
 def load_data():
     df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
@@ -569,9 +573,60 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
 
     return result
 
+
+def get_mismatched_entries_fast(df, threshold=0.2):
+    
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+
+    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=device)
+    
+    unique_gewerke = df['Gewerk_Name'].unique()
+    unique_handwerker = df['Handwerker_Name'].unique()
+
+    emb_gewerke_dict = {
+        name: vec for name, vec in zip(
+            unique_gewerke, 
+            model.encode(unique_gewerke, batch_size=64, show_progress_bar=False, device=device)
+        )
+    }
+    
+    emb_handwerker_dict = {
+        name: vec for name, vec in zip(
+            unique_handwerker, 
+            model.encode(unique_handwerker, batch_size=64, show_progress_bar=False, device=device)
+        )
+    }
+
+    embeddings_gewerk = np.array([emb_gewerke_dict[name] for name in df['Gewerk_Name']])
+    embeddings_handwerker = np.array([emb_handwerker_dict[name] for name in df['Handwerker_Name']])
+    
+    cosine_dists = paired_cosine_distances(embeddings_gewerk, embeddings_handwerker)
+    
+
+    df['Similarity_Score'] = 1 - cosine_dists
+    
+    mismatches = df[df['Similarity_Score'] < threshold].copy()
+    mismatches = mismatches.sort_values(by='Similarity_Score', ascending=True)
+    
+    return mismatches
+
+
 if __name__ == "__main__":
     df, df2 = load_data()
-    a,b,c = plausibilitaetscheck_forderung_einigung(df)
-    print(type(a))
-    print(type(b))
-    print(type(c))
+    # a,b,c = plausibilitaetscheck_forderung_einigung(df)
+    # print(type(a))
+    # print(type(b))
+    # print(type(c))
+    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
+    start_time = time.time()
+    result = get_mismatched_entries_fast(df)
+    end_time = time.time()
+    print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+
+    # Ausgabe
+    print(f"\nGefundene Unstimmigkeiten: {len(result)}")
+    print("-" * 50)
+    if not result.empty:
+        print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
+    else:
+        print("Alles scheint zu passen!")

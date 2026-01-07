@@ -33,7 +33,7 @@
 - Info: Alle ID Spalten sind reine DatenbankID´s (Enthalten keine Informationen)
 - ~~TODO~~: Info: Differenz_vor_Zeitwert_Netto: Differenz Forderung und Einigung /// erledigt: check_zeitwert()
 - TODO: Abgleich Positionsdaten und Auftragsdaten: Summe zwischen Position und Auftrag | Metrik: Anzahl Aufträge ohne Position
-- TODO: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt (machen wir das überhaupt noch? Denke wenn wir die Spalte nicht bekommen ist das Quatsch) -> Ja ich denke wir können das weglassen. Spart uns auch Zeit
+- ~~TODO~~: Wenn wir Spalte bekommen, ob manueller Betrag: Empfehlung und Einigung immer gleich, außer wenn manueller Betrag gesetzt (machen wir das überhaupt noch? Denke wenn wir die Spalte nicht bekommen ist das Quatsch) -> Ja ich denke wir können das weglassen. Spart uns auch Zeit
 
 - ~~TODO~~: Metrik: Steigerung der Anzahl an Positionen pro Auftrag je Zeitraum /// erledigt: positions_per_order_over_time()
 - ~~TODO~~: Fehlerhäufigkeit nach Tageszeit und Wochentag aggregieren // error_frequency_by_weekday_hour()
