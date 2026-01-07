@@ -21,27 +21,20 @@ def ratio_null_values_column(input_df):
 
     Returns
     -------
-    ratio_dict: pd.DataFrame
-        DataFrame of the form
-          |column_name |  null_ratio (float)|
+    ratio_dict: dict
+        Dictionary of the form
+          {column_name=  null_ratio (float)}
         with null_ratio being the percentage amount of null entries in the column  
     """    
-    # length_df = len(input_df)
-    # ratio_dict = {}
-    # for column in input_df.columns:
-    #     null_values = input_df[column].isna().sum()
-    #     ratio_null = round(null_values / length_df * 100, 2) # In Percent
-    #     ratio_dict[column] = ratio_null
+    length_df = len(input_df)
+    ratio_dict = {}
+    for column in input_df.columns:
+        null_values = input_df[column].isna().sum()
+        ratio_null = round(null_values / length_df * 100, 2) # In Percent
+        ratio_dict[column] = ratio_null
     
-    # return ratio_dict
-    null_ratio_df = pd.DataFrame(input_df.isna()
-                             .mean()
-                             .mul(100)
-                             .round(2)
-                             .rename("null_ratio")
-                             .reset_index()
-                             )
-    return null_ratio_df
+    return ratio_dict
+
 # wird nur wiederverwendet
 def ratio_null_values_rows(input_df, relevant_columns=None):
     """Helper function that calculates the ratio of rows containing null values in all / only chosen columns to total number of rows.  
@@ -617,15 +610,49 @@ def get_mismatched_entries_fast(df, threshold=0.2):
     
     return mismatches
 
-def abgleich_auftraege(df1, df2):
 
-    df2_sum = df2.groupby('KvaRechnung_ID')[['Forderung_Netto', 'Einigung_Netto']].sum().reset_index()
+def abgleich_auftraege(df1, df2):
+    """
+    Vergleicht die Kopfdaten von Aufträgen (df1) mit der Summe ihrer Positionen (df2).
+
+    Die Funktion gruppiert die Positionsdaten (df2) anhand der 'Kva_RechnungID', bildet
+    die Summen für 'Forderung_Netto' und 'Einigung_Netto' und vergleicht diese mit den
+    in df1 hinterlegten Werten. Gleitkomma-Ungenauigkeiten werden dabei berücksichtigt.
+
+    Args:
+        df1 (pd.DataFrame): Dataframe mit den Auftragsdaten (Soll-Werte).
+            Muss zwingend folgende Spalten enthalten:
+            - 'Kva_RechnungID' (Verbindungsschlüssel)
+            - 'Forderung_Netto'
+            - 'Einigung_Netto'
+            
+        df2 (pd.DataFrame): Dataframe mit den Positionsdaten (Ist-Werte).
+            Muss zwingend folgende Spalten enthalten:
+            - 'Kva_RechnungID' (Verbindungsschlüssel)
+            - 'Forderung_Netto'
+            - 'Einigung_Netto'
+
+    Returns:
+        pd.DataFrame: Eine Liste der Abweichungen. Der Dataframe enthält nur die IDs,
+        bei denen die Werte nicht übereinstimmen.
+        
+        Enthaltene Spalten:
+        - 'Kva_RechnungID': ID des betroffenen Auftrags.
+        - 'Diff_Forderung': Differenzbetrag (Wert in df1 - Summe in df2).
+        - 'Diff_Einigung': Differenzbetrag (Wert in df1 - Summe in df2).
+        
+        Ist die Differenz positiv, ist der Wert im Auftrag höher als die Summe der Positionen.
+    """
+
+    df2_sum = df2.groupby('KvaRechnung_ID', observed=False)[['Forderung_Netto', 'Einigung_Netto']].sum().reset_index()
 
     merged = pd.merge(df1, df2_sum, on='KvaRechnung_ID', how='left', suffixes=('_soll', '_ist'))
-    merged.fillna(0, inplace=True)
+
+    cols_to_fix = ['Forderung_Netto_ist', 'Einigung_Netto_ist']
+    merged[cols_to_fix] = merged[cols_to_fix].fillna(0)
     
-    merged['Diff_Forderung'] = merged['Forderung_Netto_soll'] - merged['Forderung_Netto_ist']
-    merged['Diff_Einigung'] = merged['Einigung_Netto_soll'] - merged['Einigung_Netto_ist']
+    merged['Diff_Forderung'] = (merged['Forderung_Netto_soll'] - merged['Forderung_Netto_ist']).round(2)
+    merged['Diff_Einigung'] = (merged['Einigung_Netto_soll'] - merged['Einigung_Netto_ist']).round(2)
     
     mask_abweichung = (
         ~np.isclose(merged['Diff_Forderung'], 0) | 
@@ -634,7 +661,7 @@ def abgleich_auftraege(df1, df2):
     
     abweichungen = merged[mask_abweichung].copy()
     
-    result_df = abweichungen[['KvaRechnung_ID', 'Diff_Forderung', 'Diff_Einigung']]
+    result_df = abweichungen[['KvaRechnung_ID', 'Diff_Forderung', 'Diff_Einigung',]]
     
     return result_df
 
