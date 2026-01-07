@@ -610,6 +610,28 @@ def get_mismatched_entries_fast(df, threshold=0.2):
     
     return mismatches
 
+def abgleich_auftraege(df1, df2):
+
+    df2_sum = df2.groupby('Kva_RechnungID')[['Forderung_Netto', 'Einigung_Netto']].sum().reset_index()
+
+    merged = pd.merge(df1, df2_sum, on='Kva_RechnungID', how='left', suffixes=('_soll', '_ist'))
+    merged.fillna(0, inplace=True)
+    
+    merged['Diff_Forderung'] = merged['Forderung_Netto_soll'] - merged['Forderung_Netto_ist']
+    merged['Diff_Einigung'] = merged['Einigung_Netto_soll'] - merged['Einigung_Netto_ist']
+    
+    mask_abweichung = (
+        ~np.isclose(merged['Diff_Forderung'], 0) | 
+        ~np.isclose(merged['Diff_Einigung'], 0)
+    )
+    
+    abweichungen = merged[mask_abweichung].copy()
+    
+    result_df = abweichungen[['Kva_RechnungID', 'Diff_Forderung', 'Diff_Einigung']]
+    
+    return result_df
+
+
 
 if __name__ == "__main__":
     df, df2 = load_data()
@@ -617,16 +639,25 @@ if __name__ == "__main__":
     # print(type(a))
     # print(type(b))
     # print(type(c))
-    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
+    # df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
+    # start_time = time.time()
+    # result = get_mismatched_entries_fast(df)
+    # end_time = time.time()
+    # print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+
+    # # Ausgabe
+    # print(f"\nGefundene Unstimmigkeiten: {len(result)}")
+    # print("-" * 50)
+    # if not result.empty:
+    #     print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
+    # else:
+    #     print("Alles scheint zu passen!")
+
+
+    # Funktion aufrufen
+    ergebnis = abgleich_auftraege(df, df2)
     start_time = time.time()
-    result = get_mismatched_entries_fast(df)
+    print("Aufträge mit Abweichungen:")
+    print(ergebnis)
     end_time = time.time()
     print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
-
-    # Ausgabe
-    print(f"\nGefundene Unstimmigkeiten: {len(result)}")
-    print("-" * 50)
-    if not result.empty:
-        print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
-    else:
-        print("Alles scheint zu passen!")
