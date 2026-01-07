@@ -20,7 +20,7 @@ df.info(memory_usage='deep')
 df2.info(memory_usage='deep')
 
 
-None_placeholder = ["-", "(leer)", "(null)", "wird vergeben", "unbekannter HW", "Allgemeine Standardbeschreibungen"]
+None_placeholder = ["-", "(leer)", "(null)", "wird vergeben", "unbekannter HW", "#unbekannter hw", "Allgemeine Standardbeschreibungen"]
 for placeholder in None_placeholder:
     df = df.replace(placeholder, pd.NA)
     df2 = df2.replace(placeholder, pd.NA)

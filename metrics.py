@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import time
+import re
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity, paired_cosine_distances
 import torch
@@ -581,7 +582,7 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
     return result
 
 
-def get_mismatched_entries_fast(df, threshold=0.2):
+def get_mismatched_entries(df, threshold=0.2):
     
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
@@ -617,6 +618,123 @@ def get_mismatched_entries_fast(df, threshold=0.2):
     
     return mismatches
 
+def handwerker_gewerke_outlier(df):
+    df = df[["Handwerker_Name", "Gewerk_Name"]]
+    df = df.dropna()
+    stats = df.groupby(['Handwerker_Name', 'Gewerk_Name'], observed=True).size().reset_index(name='count')
+    total_counts = df.groupby('Handwerker_Name', observed=True).size().reset_index(name='total_count')
+
+    stats = stats.merge(total_counts, on='Handwerker_Name')
+    stats['ratio'] = stats['count'] / stats['total_count'] 
+
+    stats['anzahl_gewerke'] = stats.groupby('Handwerker_Name', observed=True)['Gewerk_Name'].transform('count')
+    stats['is_outlier'] = (stats['anzahl_gewerke'] > 1) & (stats['ratio'] < 0.2)
+    stats = stats.dropna()
+
+    return stats
+
+def check_keywords_vectorized(df):
+    
+    keywords_mapping = {
+    'Heizung- und Sanitärinstallation': ['heizung', 'sanitär', 'bad', 'gas', 'wasser', 'hls', 'wärme', 'installateur', 'haustechnik', 'therme', 'leckage'],
+    'Metallbau- und Schlosserarbeiten': ['metall', 'schlosser', 'stahlbau', 'schweiß', 'schmiede', 'konstruktion', 'edelstahl'],
+    'Fahrrad': ['fahrrad', 'bike', 'rad', 'zweirad', 'velo', 'ebike'],
+    'Maurerarbeiten': ['maurer', 'rohbau', 'baugeschäft', 'hochbau', 'bauunternehmung', 'klinker'],
+    'Putz- und Stuckarbeiten': ['putz', 'stuck', 'verputz', 'gips', 'lehmbau', 'fassadenputz'],
+    'Fassadensysteme': ['fassade', 'verklinkerung', 'dämmung', 'bekleidung', 'wand'],
+    'Rollladen und Sonnenschutz': ['rollladen', 'sonnenschutz', 'jalousie', 'markise', 'store', 'beschattung', 'rolltor'],
+    'Dachdeckerarbeiten': ['dach', 'bedachung', 'dachdecker', 'steildach', 'flachdach', 'ziegel'],
+    'Tief- und Erdbauarbeiten': ['tiefbau', 'erdbau', 'bagger', 'aushub', 'erd bewegung', 'graben', 'schacht'],
+    'Bodenbelagsarbeiten': ['boden', 'belag', 'teppich', 'linoleum', 'vinyl', 'raumausstatter', 'laminat', 'designbelag'],
+    'Tischlerarbeiten': ['tischler', 'schreiner', 'möbel', 'holzbau', 'innenausbau', 'fensterbau'],
+    'Leckageortung und Trocknung': ['leck', 'ortung', 'trocknung', 'feuchte', 'wassersha', 'thermografie'],
+    'Fliesen- und Plattenverlegearbeiten': ['fliesen', 'platten', 'mosaik', 'keramik', 'granit', 'steinzeug'],
+    'Maler- und Tapezierarbeiten': ['maler', 'lack', 'anstrich', 'tapezier', 'farbe', 'raumdesign'],
+    'Zimmer- und Holzbauarbeiten': ['zimmerer', 'zimmerei', 'holzbau', 'sägewerk', 'abbund', 'dachstuhl'],
+    'Elektroarbeiten': ['elektro', 'strom', 'elektronik', 'schaltanlagen', 'licht', 'kabel', 'spannung'],
+    'Rohr- und Kanalbefahrung': ['kanal', 'rohr', 'tv-inspektion', 'dichtheit', 'abfluss', 'kamera'],
+    'Spenglerarbeiten': ['spengler', 'klempner', 'blech', 'flaschner', 'kupfer', 'zink'],
+    'Garten- und Landschaftsbauarbeiten': ['garten', 'landschaft', 'galabau', 'grün', 'pflanze', 'baum', 'außenanlagen'],
+    'Sachverständigenleistungen': ['sachverständig', 'gutachter', 'expert', 'bewertung', 'wertermittlung', 'analyse'],
+    'Multigewerk': ['bauunternehmung', 'generalunternehmer', 'bauservice', 'dienstleistung', 'allround', 'sanierung', 'komplettbau'],
+    'Brandschmutzbeseitigung': ['brand', 'sanierung', 'ruß', 'reinigung', 'schadenmanagement'],
+    'Verglasungsarbeiten': ['glas', 'fenster', 'vitrinen', 'spiegel', 'wintergarten'],
+    'Trockenbauarbeiten': ['trockenbau', 'akustik', 'rigips', 'innenausbau', 'montagebau'],
+    'Sicherheits- und Baustelleneinrichtung': ['sicherheit', 'baustrom', 'absperrung', 'bauzaun', 'wc-service', 'logistik'],
+    'Abfall, Entsorgung und Recycling': ['entsorgung', 'recycling', 'container', 'schrott', 'abfall', 'mulden'],
+    'Schließanlagen und Beschläge': ['schlüssel', 'schließ', 'sicherheitstechnik', 'beschlag', 'tresor'],
+    'Daten-, Melde- und Kommunikationsanlagen': ['daten', 'netzwerk', 'kommunikation', 'edv', 'it', 'telekom', 'glasfaser'],
+    'Straßen, Wege, Plätze': ['straßenbau', 'pflaster', 'asphalt', 'wege', 'hofbefestigung'],
+    'Gebäudereinigung': ['reinigung', 'clean', 'facility', 'sauber', 'glasreinigung', 'service'],
+    'Mauerarbeiten': ['mauer', 'stein', 'rohbau', 'sanierung'],
+    'Dachklempnerarbeiten': ['dachklempner', 'dachrinne', 'fallrohr', 'bauklempner'],
+    'Sanierungsarbeiten an schadstoffhaltigen Bauteilen': ['asbest', 'schadstoff', 'altlasten', 'dekontamination', 'kmf'],
+    'Lüftungsbau und Klimatechnik': ['lüftung', 'klima', 'kälte', 'air', 'ventilation', 'raumluft'],
+    'Bauleitung': ['bauleitung', 'architekt', 'ingenieur', 'planung', 'baubetreuung', 'projektsteuerung'],
+    'Werbeanlagen': ['werbe', 'reklame', 'schild', 'lichtwerbung', 'folie', 'beschriftung', 'sign'],
+    'Verkehrstechnische Anlagen': ['verkehr', 'ampel', 'signal', 'markierung', 'leitsystem'],
+    'Estricharbeiten': ['estrich', 'unterboden', 'zement', 'fließestrich'],
+    'Schwimmbadtechnik': ['schwimmbad', 'pool', 'sauna', 'wellness', 'wasseraufbereitung'],
+    'Gerüstbauarbeiten': ['gerüst', 'rüstung', 'einrüstung', 'steigtechnik'],
+    'Parkettarbeiten': ['parkett', 'dielen', 'schleif', 'holzboden'],
+    'Abbrucharbeiten': ['abbruch', 'abriss', 'rückbau', 'demontage', 'spreng'],
+    'Natursteinarbeiten': ['naturstein', 'steinmetz', 'marmor', 'granit', 'grabmale'],
+    'Medienverbrauch': ['stadtwerke', 'energie', 'versorgung', 'messdienst', 'strom', 'gas', 'wasser'],
+    'Beton- und Stahlbetonarbeiten': ['beton', 'stahlbeton', 'pump', 'fertigteil', 'schalung'],
+    'Handel': ['handel', 'vertrieb', 'shop', 'markt', 'baustoff', 'großhandel', 'verkauf'],
+    'Mietminderung': ['mieterschutz', 'anwalt', 'mietverein', 'recht'],
+    'Stahlbauarbeiten': ['stahlbau', 'halle', 'tragwerk', 'schlosserei'],
+    'Betonerhaltungsarbeiten': ['betonsanierung', 'bautenschutz', 'rissinjizierung', 'oberflächenschutz'],
+    'Wasserhaltung': ['wasserhaltung', 'grundwasser', 'absenkung', 'brunnenbau'],
+    'Solaranlagen': ['solar', 'photovoltaik', 'pv', 'sonne', 'regenerativ', 'energie'],
+    'Schutz- und Bewegungsaufwand': ['schutz', 'verpackung', 'abdeckung', 'transportschutz', 'umzug'],
+    'Rechtsanwälte': ['anwalt', 'kanzlei', 'recht', 'notar', 'law', 'jurist'],
+    'Abdichtungsarbeiten gegen Wasser/ Bauwerkstrockenlegung': ['abdichtung', 'isolierung', 'bitumen', 'injektion', 'trockenlegung', 'leckage'],
+    'Zäune und Grundstückseinfriedungen': ['zaun', 'tor', 'einfriedung', 'gitter', 'draht'],
+    'Bekämpfender Holzschutz': ['holzschutz', 'schwamm', 'schädlingsbekämpfung', 'kammerjäger'],
+    'Spengler- / Klempnerarbeiten': ['spengler', 'klempner', 'flaschner', 'blechbearbeitung', 'leckage'],
+    'Trocknung': ['trocknung', 'bautrocknung', 'entfeuchtung', 'leckage'],
+    'KFZ': ['kfz', 'auto', 'werkstatt', 'car', 'motor', 'fahrzeug', 'garage'],
+    'Leckageortung': ['leckage', 'ortung', 'rohrbruch', 'leck'],
+    'Immobilien': ['immobilien', 'makler', 'wohnbau', 'real estate', 'verwaltung', 'property'],
+    'Versicherung': ['versicherung', 'finanz', 'assekuranz', 'makler', 'agentur']
+}
+    
+   
+    
+    names = df['Handwerker_Name'].astype(str).str.lower()
+    
+    confirmed_mask = np.zeros(len(df), dtype=bool)
+    
+    conflict_series = pd.Series([None] * len(df), index=df.index)
+    
+    for trade, keywords in keywords_mapping.items():
+        if not keywords:
+            continue
+            
+        pattern = '|'.join(map(re.escape, keywords))
+        
+        has_keyword = names.str.contains(pattern, regex=True, na=False)
+        
+        is_current_trade = (df['Gewerk_Name'] == trade)
+        confirmed_mask = confirmed_mask | (has_keyword & is_current_trade)
+        
+        is_conflict = (has_keyword & ~is_current_trade)
+        
+        mask_to_update = is_conflict & conflict_series.isna()
+        conflict_series.loc[mask_to_update] = f"CONFLICT_WITH_{trade.upper()}"
+
+    final_result = np.where(
+        confirmed_mask,
+        "CONFIRMED_BY_NAME",
+        np.where(
+            conflict_series.notna(), 
+            conflict_series, 
+            "NO_KEYWORD_INFO"
+        )
+    )
+    
+    return final_result
 
 def abgleich_auftraege(df1, df2):
     """
@@ -701,3 +819,8 @@ if __name__ == "__main__":
     print(ergebnis)
     end_time = time.time()
     print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+
+
+    df_added = handwerker_gewerke_outlier(df)
+    df_true = df_added[df_added['is_outlier'] == True]
+    df_true['Check_Result'] = check_keywords_vectorized(df_true)
