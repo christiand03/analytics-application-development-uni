@@ -21,20 +21,27 @@ def ratio_null_values_column(input_df):
 
     Returns
     -------
-    ratio_dict: dict
-        Dictionary of the form
-          {column_name=  null_ratio (float)}
+    ratio_dict: pd.DataFrame
+        DataFrame of the form
+          |column_name |  null_ratio (float)|
         with null_ratio being the percentage amount of null entries in the column  
     """    
-    length_df = len(input_df)
-    ratio_dict = {}
-    for column in input_df.columns:
-        null_values = input_df[column].isna().sum()
-        ratio_null = round(null_values / length_df * 100, 2) # In Percent
-        ratio_dict[column] = ratio_null
+    # length_df = len(input_df)
+    # ratio_dict = {}
+    # for column in input_df.columns:
+    #     null_values = input_df[column].isna().sum()
+    #     ratio_null = round(null_values / length_df * 100, 2) # In Percent
+    #     ratio_dict[column] = ratio_null
     
-    return ratio_dict
-
+    # return ratio_dict
+    null_ratio_df = pd.DataFrame(input_df.isna()
+                             .mean()
+                             .mul(100)
+                             .round(2)
+                             .rename("null_ratio")
+                             .reset_index()
+                             )
+    return null_ratio_df
 # wird nur wiederverwendet
 def ratio_null_values_rows(input_df, relevant_columns=None):
     """Helper function that calculates the ratio of rows containing null values in all / only chosen columns to total number of rows.  
