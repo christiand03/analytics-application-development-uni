@@ -3,7 +3,7 @@ import numpy as np
 import time
 import re
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity, paired_cosine_distances
+from sklearn.metrics.pairwise import paired_cosine_distances
 import torch
 
 def load_data():
@@ -227,14 +227,14 @@ def data_cleanliness(input_df, group_by_col=None):
     -------
     null_ratio_rows: float or None
         Percentage value of rows with at least one null value in the given columns.
-    null_ratio_cols: dict or None
-        Dictionary of the form {column_name=  null_ratio (float)}, with null_ratio being the percentage amount of null entries in the column.   
+    null_ratio_cols: DataFrame or None
+        DataFrame, with null_ratio being the percentage amount of null entries in the column.   
     grouped_row_ratios: pandas.Series or None
         Series containing the row ratios of all groups as float.
     grouped_col_ratios: pandas.DataFrame or None
         DataFrame containing groups and null-value-ratios per column for each.             
     """      
-    group_by_col = "Kundengruppe" #TODO: needs to be set by Frontend, remove this once implemented in dashboard
+    #group_by_col = "Kundengruppe" #TODO: needs to be set by Frontend, remove this once implemented in dashboard
 
     if group_by_col is None:
         null_ratio_rows = ratio_null_values_rows(input_df)
@@ -794,26 +794,22 @@ def abgleich_auftraege(df1, df2):
 
 if __name__ == "__main__":
     df, df2 = load_data()
-    # a,b,c = plausibilitaetscheck_forderung_einigung(df)
-    # print(type(a))
-    # print(type(b))
-    # print(type(c))
-    # df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
-    # start_time = time.time()
-    # result = get_mismatched_entries_fast(df)
-    # end_time = time.time()
-    # print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
 
-    # # Ausgabe
-    # print(f"\nGefundene Unstimmigkeiten: {len(result)}")
-    # print("-" * 50)
-    # if not result.empty:
-    #     print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
-    # else:
-    #     print("Alles scheint zu passen!")
+    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
+    start_time = time.time()
+    result = get_mismatched_entries(df)
+    end_time = time.time()
+    print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+
+    # Ausgabe
+    print(f"\nGefundene Unstimmigkeiten: {len(result)}")
+    print("-" * 50)
+    if not result.empty:
+        print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
+    else:
+        print("Alles scheint zu passen!")
 
 
-    # Funktion aufrufen
     start_time = time.time()
     ergebnis = abgleich_auftraege(df, df2)
     print("Aufträge mit Abweichungen:")
