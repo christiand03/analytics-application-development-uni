@@ -8,3 +8,5 @@ resources/Positionsdaten_konvertiert
 __pycache__
 testing.py
 venv/
+resources/eval_df.html
+resources/eval.html

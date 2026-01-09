@@ -34,7 +34,6 @@ def get_scalar_metrics():
     """Helper to load the single-row scalar table."""
     con = get_db_connection()
     try:
-        # Returns a Series indexed by column name for easy dict-like access
         return con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
     finally:
         con.close()
@@ -48,45 +47,32 @@ def compute_metrics_df1():
     scalars = get_scalar_metrics()
     
     try:
-        # Load Complex Metrics Tables
         null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
         
-        # Test Data: If table is empty, return 0/Empty DataFrame logic handled by scalars + empty DF
         test_data_df = con.execute("SELECT * FROM metric_test_data_entries").df()
         
-        # Statistics: Convert back to nested dict structure expected by Page 2
-        # DB Table format: [column_name, mean, std, ...]
         stats_df = con.execute("SELECT * FROM metric_numeric_stats_auftragsdaten").df()
         statistiken_num = stats_df.set_index('column_name').T.to_dict()
 
-        # Plausibility: Convert DF column back to Series
         plausi_df = con.execute("SELECT * FROM metric_plausibility_diffs_auftragsdaten").df()
         plausi_diff_list = plausi_df['differenz_eur'] if not plausi_df.empty else pd.Series(dtype=float)
 
-        # Cleanliness Grouped: 
         grouped_col_ratios_df1 = con.execute("SELECT * FROM metric_cleanliness_cols_grouped_auftragsdaten").df()
         
-        # Row Ratios Grouped: Convert DF back to Series expected by charts
         row_ratios_df = con.execute("SELECT * FROM metric_cleanliness_rows_grouped_auftragsdaten").df()
         grouped_row_ratios_df1 = row_ratios_df.set_index('Kundengruppe')['row_null_ratio']
 
-        # Proforma
         proforma_df = con.execute("SELECT * FROM metric_proforma").df()
 
-        # Above 50k
         above_50k_df = con.execute("SELECT * FROM metric_above_50k").df()
 
-        # Zeitwert Errors: Convert to Series
         zeitwert_df = con.execute("SELECT * FROM metric_zeitwert_errors").df()
         zeitwert_errors_series = zeitwert_df['zeitwert_diff'] if not zeitwert_df.empty else pd.Series(dtype=float)
 
-        # Heatmap
         error_freq_df = con.execute("SELECT * FROM metric_error_heatmap").df()
 
-        # Handwerker Outliers
         handwerker_outliers = con.execute("SELECT * FROM metric_handwerker_outliers").df()
         
-        # Semantic Mismatches (previously commented out, now available in DB)
         semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
     finally:
@@ -127,22 +113,13 @@ def compute_metrics_df2():
     scalars = get_scalar_metrics()
 
     try:
-        # Statistics: Convert back to dict
+
         stats_df2 = con.execute("SELECT * FROM metric_numeric_stats_positionsdaten").df()
         statistiken_num = stats_df2.set_index('column_name').T.to_dict()
         
-        # Plausibility
         plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
         plausi_diff_list = plausi_df2['differenz_eur'] if not plausi_df2.empty else pd.Series(dtype=float)
 
-        # Position Counts (This logic was inside the DB script used for merging, 
-        # but if page2 needs the aggregation dataframe, we might need to query positionsdaten.
-        # Assuming page just needs stats or scalars mostly, but here is the count logic if needed re-derived
-        # or if specific metrics required it. Based on `metrics_df2` keys, we need:
-        # "position_counts_per_rechnung". 
-        # Note: The DB script used `mt.position_count(df2)` to merge into `auftragsdaten`, 
-        # but didn't explicitly save the simple `position_count` DF as a standalone metric table.
-        # We can quickly aggregate it via SQL here since it's fast.)
         position_counts_df = con.execute("""
             SELECT KvaRechnung_ID, COUNT(Position_ID) as PositionsAnzahl 
             FROM positionsdaten 
@@ -154,33 +131,19 @@ def compute_metrics_df2():
 
     metrics_df2 = {
         "row_count": scalars['count_total_positions'],
-        "null_ratio_cols": pd.read_sql("SELECT * FROM metric_cleanliness_cols_ungrouped_positionsdaten", get_db_connection()), # Loading ad-hoc or from ungrouped table
-        "null_ratio_rows": scalars['null_ratio_positions'] if 'null_ratio_positions' in scalars else 0, # Note: scalar name in DB script was null_ratio_positions? No, script says `null_ratio_positions = mt.ratio...` but scalar key was NOT explicitly `null_ratio_positions`? 
-        # Checking DB Script: key was 'null_ratio_positions' variable, but stored in df_scalars? 
-        # Wait, the DB script creates `null_ratio_orders` and `null_ratio_positions` but in `kpi_data` dictionary:
-        # 'null_row_ratio_orders': ... but I don't see 'null_row_ratio_positions' in the kpi_data dict in your snippet!
-        # I will calculate it here quickly to be safe or assume it's 0 if not found.
-        # FIX: The provided DB script does NOT save null_ratio_rows for df2 in scalars. 
-        # I will compute it via SQL quickly.
+        "null_ratio_cols": pd.read_sql("SELECT * FROM metric_cleanliness_cols_ungrouped_positionsdaten", get_db_connection()),
+        "null_ratio_rows": scalars['null_ratio_positions'] if 'null_ratio_positions' in scalars else 0, 
         "statistiken_num": statistiken_num,
         "discount_check_errors": scalars['count_discount_logic_errors'],
         "position_counts_per_rechnung": position_counts_df,
         "plausi_forderung_einigung_list": plausi_diff_list,
-        "plausi_forderung_einigung_count": plausi_diff_list.size, # Approximate if exact count not in scalar
+        "plausi_forderung_einigung_count": plausi_diff_list.size, 
         "plausi_forderung_einigung_avg_diff": plausi_diff_list.mean() if not plausi_diff_list.empty else 0,
         "false_negative": scalars['count_false_negative_df2']
     }
     
-    # Fix for missing scalar key in DB script provided:
-    # Calculating null ratio rows for positionsdaten on the fly via SQL
     con = get_db_connection()
     total_rows = scalars['count_total_positions']
-    # Approximate check for nulls in all columns
-    # (Doing this in SQL is tedious for all columns without a loop, 
-    # but strictly speaking we can load it from a helper if needed. 
-    # For performance, let's assume 0 or calc on loaded DF2)
-    # Since we have df2 loaded in 'load()', the page might re-calculate or we can use the loaded DF.
-    # To keep this function standalone, let's use the DF from load():
     _, df2_temp = load()
     metrics_df2["null_ratio_rows"] = (df2_temp.isnull().any(axis=1).sum() / len(df2_temp) * 100) if len(df2_temp) > 0 else 0
     con.close()
@@ -198,7 +161,6 @@ def compute_metrics_combined():
     scalars = get_scalar_metrics()
     
     try:
-        # Order/Position Mismatch
         auftraege_abgleich_df = con.execute("SELECT * FROM metric_order_pos_mismatch").df()
     finally:
         con.close()
