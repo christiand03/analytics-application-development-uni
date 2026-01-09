@@ -10,3 +10,4 @@ testing.py
 venv/
 resources/eval_df.html
 resources/eval.html
+resources/dashboard_data.duckdb

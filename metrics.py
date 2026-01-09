@@ -213,8 +213,8 @@ def split_dataframe(input_df, chunks=5):
     return np.array_split(input_df, chunks)
 
 
-def data_cleanliness(input_df, group_by_col=None):
-    """Determines ratio of null-values by columns and percentage of rows containing any amount of null values, with optional grouping by a given column (currently dummied to Kundengruppe, remove once implemented in frontend).
+def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
+    """Determines ratio of null-values by columns and percentage of rows containing any amount of null values, with optional grouping by a given column.
 
     Parameters
     ----------
@@ -222,6 +222,8 @@ def data_cleanliness(input_df, group_by_col=None):
         DataFrame that is to be evaluated.
     group_by_col: string, optional
         Column identifier for grouping
+    specific_group: string, optional
+        Passes a group entry to filter the result by, if any   
 
     Returns
     -------
@@ -234,7 +236,7 @@ def data_cleanliness(input_df, group_by_col=None):
     grouped_col_ratios: pandas.DataFrame or None
         DataFrame containing groups and null-value-ratios per column for each.             
     """      
-    #group_by_col = "Kundengruppe" #TODO: needs to be set by Frontend, remove this once implemented in dashboard
+    #group_by_col = "Kundengruppe" #needs to be set by Frontend, remove this once implemented in dashboard
 
     if group_by_col is None:
         null_ratio_rows = ratio_null_values_rows(input_df)
@@ -243,7 +245,9 @@ def data_cleanliness(input_df, group_by_col=None):
         return null_ratio_rows, null_ratio_cols
 
     else:
+            
         grouped = input_df.groupby(group_by_col,observed=True)
+        
         # Group for columns & rows
         grouped_null_counts = grouped.apply(lambda x: x.isnull().sum())
         grouped_null_rows = grouped.apply(lambda x: x.isnull().any(axis=1).sum())
@@ -254,8 +258,11 @@ def data_cleanliness(input_df, group_by_col=None):
         # calculate ratios
         grouped_col_ratios = grouped_null_counts.div(group_sizes, axis=0)
         grouped_row_ratios = grouped_null_rows / group_sizes
-
+        if specific_group:
+            grouped_col_ratios = grouped_col_ratios.loc[[specific_group]]
+            grouped_row_ratios = grouped_row_ratios.loc[[specific_group]] 
         return grouped_row_ratios, grouped_col_ratios
+        
 
 
 def groupby_col(input_df, col):
@@ -277,7 +284,8 @@ def groupby_col(input_df, col):
 
     return input_df_grouped
 
-# returns ~750K that cant be right
+# returns ~750K that cant be right (the most likely reason for this is probably the assumption in the Plausibel logic
+# that rates all 0 entries in Einigung (due to somebody using the manual entry function on-site) as not valid, might ramp the number up significantly)
 def discount_check(df2):
     """Checks if a row in the 'Positionsdaten' data set does/doesn't describe a discount or similar and if the 'Einigung_Netto' and 'Forderung_Netto' information accurately reflects this (negative or positive values). 
     
