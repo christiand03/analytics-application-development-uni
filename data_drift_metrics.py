@@ -30,7 +30,7 @@ df = df.dropna(subset=['CRMEingangszeit'])
 df2 = df2.dropna(subset=['CRMEingangszeit'])
 
 # Schema für Auftragsdatenset, nur aufgeführte Spalten werden geprüft   
-schema_df1 = DataDefinition(
+schema_df = DataDefinition(
     numerical_columns= ["Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto", "Differenz_vor_Zeitwert_Netto"],
     categorical_columns= ["Land","Schadenart_Name", "Falltyp_Name", "Gewerk_Name"],
     id_column= "AuftragID",
@@ -39,7 +39,7 @@ schema_df1 = DataDefinition(
 #Analog für Positionsdaten
 schema_df2 = DataDefinition(
     id_column= "Position_ID",
-    numerical_columns= ["Menge","Menge_Einigung", "EP", "EP_Einigung", "Forderung_Netto", "Einigung_Netto", "Position_ID"],
+    numerical_columns= ["Menge","Menge_Einigung", "EP", "EP_Einigung", "Forderung_Netto", "Einigung_Netto"],
     timestamp="CRMEingangszeit"
     )
 
@@ -51,11 +51,11 @@ schema_df2 = DataDefinition(
 #Test-Initialisierung von Datensets 
 # reference_data1 = Dataset.from_pandas(
 #     df.head(2000),
-#     data_definition=schema_df1
+#     data_definition=schema_df
 # )    
 # eval_data1 = Dataset.from_pandas(
 #     df.head(10000),
-#     data_definition=schema_df1
+#     data_definition=schema_df
 # )     
 
 
@@ -99,10 +99,18 @@ def datetime_slice_mask(df, start_date, end_date):
     evidently.Dataset
         sliced DataFrame, converted to Dataset.
     """
-    mask =(df["CRMEingangszeit"] >= start_date) & (df["CRMEingangszeit"] < end_date) 
-    sliced_ds = Dataset.from_pandas(
-        df.loc[mask]
-    ) 
+    mask =(df["CRMEingangszeit"] >= start_date) & (df["CRMEingangszeit"] < end_date)
+
+    if 'Kundengruppe' in df.columns: #evaluates true if Auftragsdaten-df was passed 
+        sliced_ds = Dataset.from_pandas(
+            df.loc[mask],
+            data_definition=schema_df
+        ) 
+    if 'Menge' in df.columns: #evaluates true if Positionsdaten-df was passed
+        sliced_ds = Dataset.from_pandas(
+            df.loc[mask],
+            data_definition=schema_df2
+        )  
     return sliced_ds
 
 @pyins.profile()
