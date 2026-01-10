@@ -213,7 +213,7 @@ def split_dataframe(input_df, chunks=5):
     return np.array_split(input_df, chunks)
 
 
-def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
+def data_cleanliness(input_df, group_by_col=None, specific_group=None):
     """Determines ratio of null-values by columns and percentage of rows containing any amount of null values, with optional grouping by a given column.
 
     Parameters
@@ -221,9 +221,9 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
     input_df : pandas.DataFrame
         DataFrame that is to be evaluated.
     group_by_col: string, optional
-        Column identifier for grouping
+        Column identifier for grouping, defaults to None
     specific_group: string, optional
-        Passes a group entry to filter the result by, if any   
+        Passes a group entry to filter the result by, if any; defaults to None
 
     Returns
     -------
@@ -236,7 +236,6 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
     grouped_col_ratios: pandas.DataFrame or None
         DataFrame containing groups and null-value-ratios per column for each.             
     """      
-    #group_by_col = "Kundengruppe" #needs to be set by Frontend, remove this once implemented in dashboard
 
     if group_by_col is None:
         null_ratio_rows = ratio_null_values_rows(input_df)
@@ -284,7 +283,7 @@ def groupby_col(input_df, col):
 
     return input_df_grouped
 
-# returns ~750K that cant be right (the most likely reason for this is probably the assumption in the Plausibel logic
+# returns ~750K that cant be right (the most likely reason for this is the assumption in the Plausibel logic
 # that rates all 0 entries in Einigung (due to somebody using the manual entry function on-site) as not valid, might ramp the number up significantly)
 def discount_check(df2):
     """Checks if a row in the 'Positionsdaten' data set does/doesn't describe a discount or similar and if the 'Einigung_Netto' and 'Forderung_Netto' information accurately reflects this (negative or positive values). 
