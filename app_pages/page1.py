@@ -45,12 +45,48 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
     with chart_col1:
         st.subheader("Nullwerte je Spalte (Top N)")
 
-        null_ratio_cols = metrics_df1.get("null_ratio_cols", {})
-        if isinstance(null_ratio_cols, dict) and null_ratio_cols:
-            n = st.slider("Anzahl Spalten (Top N)", min_value=5, max_value=min(30, len(null_ratio_cols)), value=min(10, len(null_ratio_cols)), key="p1_topn")
-            null_df = (
-                pd.DataFrame(list(null_ratio_cols.items()), columns=["Spalte", "Nullquote_%"]).sort_values("Nullquote_%", ascending=False).head(n)
-            )
+        null_ratio_cols = metrics_df1.get("null_ratio_cols", None)
+
+        null_df = None
+        if isinstance(null_ratio_cols, dict) and len(null_ratio_cols) > 0:
+            tmp = pd.DataFrame(list(null_ratio_cols.items()), columns=["Spalte", "Nullquote_%"])  # altes Format
+            null_df = tmp.copy()
+        elif isinstance(null_ratio_cols, pd.DataFrame) and not null_ratio_cols.empty:
+            # erwartete Spalten im neuen Format: 'index' (Spaltenname) und 'null_ratio' (in %)
+            df_tmp = null_ratio_cols.copy()
+            # Fallback: versuche sinnvolle Spalten zu finden
+            col_name_col = None
+            ratio_col = None
+            for cand in ["index", "column", "column_name", "Spalte"]:
+                if cand in df_tmp.columns:
+                    col_name_col = cand
+                    break
+            for cand in ["null_ratio", "Nullquote_%", "ratio", "nullratio"]:
+                if cand in df_tmp.columns:
+                    ratio_col = cand
+                    break
+            if col_name_col is None:
+                # Wenn reset_index() verwendet wurde, kann der Spaltenname in der ersten Spalte ohne Namen liegen
+                if df_tmp.columns.size >= 1:
+                    col_name_col = df_tmp.columns[0]
+            if ratio_col is None and df_tmp.columns.size >= 2:
+                # Heuristik: zweite Spalte nehmen
+                ratio_col = df_tmp.columns[1]
+
+            if col_name_col is not None and ratio_col is not None:
+                null_df = df_tmp[[col_name_col, ratio_col]].rename(columns={col_name_col: "Spalte", ratio_col: "Nullquote_%"})
+
+        if isinstance(null_df, pd.DataFrame) and not null_df.empty:
+            # Slider konfigurieren
+            max_n = int(min(30, len(null_df))) if len(null_df) > 0 else 5
+            default_n = int(min(10, len(null_df))) if len(null_df) > 0 else 5
+            n = st.slider("Anzahl Spalten (Top N)", min_value=5, max_value=max(5, max_n), value=max(5, default_n), key="p1_topn")
+
+            # Sortieren und Top N auswählen
+            # Stelle sicher, dass die Quote numerisch ist
+            null_df = null_df.copy()
+            null_df["Nullquote_%"] = pd.to_numeric(null_df["Nullquote_%"], errors="coerce")
+            null_df = null_df.dropna(subset=["Nullquote_%"]).sort_values("Nullquote_%", ascending=False).head(n)
 
             bar = (
                 alt.Chart(null_df)
@@ -95,3 +131,119 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
             st.altair_chart(heat, width="stretch")
         else:
             st.info("Keine Fehlerfrequenz-Daten verfügbar.")
+
+    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+
+    # Chart 3: Avg. Positionen pro Auftrag über Monat (Trend)
+    st.subheader("Positionen pro Auftrag über Zeit (Monat)")
+    try:
+        pot_df = mt.positions_per_order_over_time(df, df2, time_col="CRMEingangszeit")
+    except Exception:
+        pot_df = None
+
+    if isinstance(pot_df, pd.DataFrame) and not pot_df.empty and {
+        "Zeitperiode", "Avg_Positionen_pro_Auftrag", "Total_Positionen", "Anzahl_Auftraege"
+    }.issubset(pot_df.columns):
+        # Zeitperiode → Datum wandeln und sortieren
+        work = pot_df.copy()
+        try:
+            work["Monat"] = pd.to_datetime(work["Zeitperiode"] + "-01", errors="coerce")
+        except Exception:
+            work["Monat"] = pd.to_datetime(work["Zeitperiode"], errors="coerce")
+        work = work.dropna(subset=["Monat"]).sort_values("Monat").reset_index(drop=True)
+
+        # Ruhige Linie ohne Marker, dunkles Theme
+        base = alt.Chart(work).encode(
+            x=alt.X("Monat:T", title="Monat")
+        )
+
+        # Y‑Achse dezent: kein erzwungenes 0, angenehme Ticks
+        y_enc = alt.Y(
+            "Avg_Positionen_pro_Auftrag:Q",
+            title="Ø Positionen pro Auftrag",
+            scale=alt.Scale(zero=False, nice=True)
+        )
+
+        line = base.mark_line(color="#7c3aed", strokeWidth=2).encode(
+            y=y_enc,
+            tooltip=[
+                alt.Tooltip("yearmonth(Monat):T", title="Monat"),
+                alt.Tooltip("Avg_Positionen_pro_Auftrag:Q", title="Ø Pos./Auftrag", format=".2f"),
+                alt.Tooltip("Anzahl_Auftraege:Q", title="Anzahl Aufträge", format=","),
+                alt.Tooltip("Total_Positionen:Q", title="Summe Positionen", format=",")
+            ]
+        )
+
+        # Relevante Punkte: letztes, Maximum, Minimum
+        last_idx = len(work) - 1
+        min_idx = int(work["Avg_Positionen_pro_Auftrag"].idxmin()) if len(work) > 0 else None
+        max_idx = int(work["Avg_Positionen_pro_Auftrag"].idxmax()) if len(work) > 0 else None
+
+        highlight_idx = sorted(set([i for i in [last_idx, min_idx, max_idx] if i is not None]))
+        highlights = work.iloc[highlight_idx].copy() if len(highlight_idx) > 0 else work.iloc[[]]
+
+        highlight_layer = (
+            alt.Chart(highlights)
+            .mark_point(filled=True, size=80, color="#e5e7eb", fill="#e5e7eb", opacity=0.9)
+            .encode(x="Monat:T", y=y_enc)
+        )
+
+        # Dezente Labels nur für Max/Min
+        if len(highlights) > 0:
+            highlights["Label"] = highlights.apply(
+                lambda r: "Max" if r.name == max_idx else ("Min" if r.name == min_idx else "Letzter Wert"), axis=1
+            )
+        label_layer = (
+            alt.Chart(highlights)
+            .mark_text(dy=-10, color="#9ca3af", fontSize=11)
+            .encode(x="Monat:T", y=y_enc, text="Label:N")
+        )
+
+        chart = (line + highlight_layer + label_layer).properties(height=320, width="container")
+        st.altair_chart(chart, use_container_width=True)
+
+        # Insight‑Text unter dem Chart – 6‑Monats‑Trend (optional)
+        try:
+            last_val = work.loc[last_idx, "Avg_Positionen_pro_Auftrag"] if len(work) else None
+            # 6 Monate zurück (oder erster Punkt, falls weniger vorhanden)
+            ref_idx = max(0, last_idx - 6)
+            ref_val = work.loc[ref_idx, "Avg_Positionen_pro_Auftrag"] if len(work) else None
+        except Exception:
+            last_val, ref_val = None, None
+
+        trend_text = ""
+        trend_metric = None
+        if pd.notna(last_val) and pd.notna(ref_val) and ref_val != 0:
+            delta_pct = (last_val - ref_val) / ref_val * 100
+            trend_metric = delta_pct
+            abs_delta = abs(delta_pct)
+            if abs_delta < 2:
+                trend_text = "Stabiler Verlauf"
+            elif abs_delta < 8:
+                trend_text = "Leichter " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " in den letzten 6 Monaten"
+            else:
+                trend_text = "Deutlicher " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " in den letzten 6 Monaten"
+        else:
+            # Fallback: insgesamt von Start zu Ende
+            if len(work) >= 2:
+                start_val = work.loc[0, "Avg_Positionen_pro_Auftrag"]
+                if pd.notna(start_val) and start_val != 0 and pd.notna(last_val):
+                    delta_pct = (last_val - start_val) / start_val * 100
+                    trend_metric = delta_pct
+                    abs_delta = abs(delta_pct)
+                    if abs_delta < 2:
+                        trend_text = "Stabiler Verlauf"
+                    elif abs_delta < 8:
+                        trend_text = "Leichter " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " seit Beginn"
+                    else:
+                        trend_text = "Deutlicher " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " seit Beginn"
+            if trend_text == "":
+                trend_text = "Verlauf derzeit nicht bewertbar"
+
+        # Ausgabe: Insight und optionale Trendkennzahl
+        st.caption(trend_text)
+        if trend_metric is not None:
+            sign = "+" if trend_metric >= 0 else ""
+            st.caption(f"6‑Monats‑Veränderung: {sign}{trend_metric:.1f}%")
+    else:
+        st.info("Keine Zeitreihendaten zu Positionen/Auftrag verfügbar.")
