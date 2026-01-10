@@ -11,3 +11,4 @@ venv/
 resources/eval_df.html
 resources/eval.html
 resources/dashboard_data.duckdb
+resources/eval_df2.html
