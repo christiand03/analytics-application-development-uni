@@ -440,6 +440,45 @@ def above_50k(df):
     suspicious_data = df[df['Einigung_Netto'] >= 50000]
     return suspicious_data
 
+def outliers_by_damage(df, schadenart=None, set_quantile=0.99, column_choice='Forderung_Netto'):
+    """Calculates the upper and lower outliers outside the desired quantile range (symmetric over mean) for each kind of damage. Assumes 'Forderung_Netto' as column of interest.  
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame to be evaluated
+    schadenart : string, optional
+        specific damage type label to filter for, by default None
+    set_quantile : float, optional
+        desired quantile range, symmetric upper/lower bound is inferred, by default 0.99
+    column_choice : str, optional
+        numeric column containing outliers, by default 'Forderung_netto'
+
+    Returns
+    -------
+    df_outlier: pandas.DataFrame
+        df containing all suspicious rows
+    """
+    if set_quantile < 0.5:
+        set_quantile = 1-set_quantile
+
+    if schadenart:
+        df = df[df['Schadenart_Name'] == schadenart]
+
+    df_grouped_upper = df.groupby(['Schadenart_Name'],observed=True)[column_choice].transform('quantile',set_quantile, numeric_only=True) 
+    df_grouped_lower = df.groupby(['Schadenart_Name'],observed=True)[column_choice].transform('quantile',1-set_quantile, numeric_only=True)
+
+    df_outlier = df[
+        (df[column_choice] > df_grouped_upper) | 
+        (df[column_choice] < df_grouped_lower)
+    ]
+
+    return df_outlier    
+
+
+
+   
+        
 
 def check_zeitwert(df):
     """Checks if the value in the column 'Differenz_vor_Zeitwert_Netto' satisfies the condition [Zeitwert = Forderung-Einigung]
