@@ -209,11 +209,11 @@ con.execute("CREATE OR REPLACE TABLE metric_cleanliness_rows_grouped_auftragsdat
 
 
 print("6. Data Cleanliness Ungrouped")
-_, df_col_ratios_ungrouped_df = mt.data_cleanliness(df)
+_, df_col_ratios_ungrouped_df = mt.data_cleanliness(df, group_by_col=None)
 df_col_ratios_ungrouped_df = df_col_ratios_ungrouped_df.rename(columns={'index': 'column_name'})
 con.execute("CREATE OR REPLACE TABLE metric_cleanliness_cols_ungrouped_auftragsdaten AS SELECT * FROM df_col_ratios_ungrouped_df")
 
-_, df_col_ratios_ungrouped_df2 = mt.data_cleanliness(df2)
+_, df_col_ratios_ungrouped_df2 = mt.data_cleanliness(df2, group_by_col=None)
 df_col_ratios_ungrouped_df2 = df_col_ratios_ungrouped_df2.rename(columns={'index': 'column_name'})
 con.execute("CREATE OR REPLACE TABLE metric_cleanliness_cols_ungrouped_positionsdaten AS SELECT * FROM df_col_ratios_ungrouped_df2")
 
@@ -230,9 +230,9 @@ con.execute("CREATE OR REPLACE TABLE metric_above_50k AS SELECT * FROM df_above_
 
 # 9. Zeitwert Errors (Returns Series -> Convert to DF)
 print("9. Zeitwert Errors")
-series_zeitwert = mt.check_zeitwert(df)
-df_zeitwert = series_zeitwert.to_frame(name='zeitwert_diff')
-con.execute("CREATE OR REPLACE TABLE metric_zeitwert_errors AS SELECT * FROM df_zeitwert")
+zeitwert = mt.check_zeitwert(df)
+#df_zeitwert = zeitwert.to_frame(name='zeitwert_diff')
+con.execute("CREATE OR REPLACE TABLE metric_zeitwert_errors AS SELECT * FROM zeitwert")
 
 # 10. Positions over Time (Returns DataFrame)
 print("10. Positions Over Time")
@@ -259,6 +259,24 @@ con.execute("CREATE OR REPLACE TABLE metric_handwerker_outliers AS SELECT * FROM
 print("14. Semantic Handwerker Mismatches")
 df_semantic = mt.get_mismatched_entries(df)
 con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
+
+print("--- Step 8: Calculating overall Issue Metric ---")
+numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
+text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
+plausi_issues = plausibility_error_count + discount_logic_errors + proforma_count + false_negative_df + false_negative_df2
+overall_issues = numeric_issues + text_issues + plausi_issues
+
+issues = {
+    'numeric_issues': [numeric_issues],
+    'text_issues': [text_issues],
+    'plausi_issues': [plausi_issues],
+    'overall_issues': [overall_issues]
+}
+
+df_issues = pd.DataFrame(issues)
+print(df_issues)
+con.execute("CREATE OR REPLACE TABLE issues AS SELECT * FROM df_issues")
+
 
 print("\n--- All Complex Metrics Saved Successfully ---")
 end_time = time.time()
