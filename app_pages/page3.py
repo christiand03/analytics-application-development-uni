@@ -1,15 +1,16 @@
 import streamlit as st
 
 
-def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
+def show_page(metrics_df1, metrics_df2, metrics_combined):
     df_outlier = metrics_df1.get("handwerker_gewerke_outlier")
     # mismatched_entries = metrics_df1.get("mismatched_entries")
     kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl")
-    anteil = kundengruppe_containing_test / len(df) * 100
+    row_count = metrics_df1.get("row_count")
+    anteil = kundengruppe_containing_test / row_count * 100
 
     # outlier KPI
     outlier_count = 0 if df_outlier is None else len(df_outlier[df_outlier['is_outlier'] == True])
-    outlier_share = outlier_count / len(df) * 100 if len(df) else 0
+    outlier_share = outlier_count / row_count * 100
 
     kpi_cols = st.columns(2)
     with kpi_cols[0]: st.metric(

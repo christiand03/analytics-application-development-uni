@@ -12,41 +12,21 @@ st.set_page_config(
     layout="wide"
 )
 
-DB_PATH = "resources/dashboard_data.duckdb"
-
 def get_db_connection():
     """Establishes a read-only connection to the DuckDB database."""
+    DB_PATH = "resources/dashboard_data.duckdb"
     return duckdb.connect(DB_PATH, read_only=True)
 
-@st.cache_data
-def load():
-    """Loads the raw cleaned dataframes from DuckDB."""
-    con = get_db_connection()
-    try:
-        df = con.execute("SELECT * FROM auftragsdaten").df()
-        df2 = con.execute("SELECT * FROM positionsdaten").df()
-        return df, df2
-    finally:
-        con.close()
-
-@st.cache_data
-def get_scalar_metrics():
-    """Helper to load the single-row scalar table."""
-    con = get_db_connection()
-    try:
-        return con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
-    finally:
-        con.close()
 
 @st.cache_data
 def compute_metrics_df1():
     print("Loading metrics for df1 (Auftragsdaten) from DB...")
     start_time = time.time()
     
-    con = get_db_connection()
-    scalars = get_scalar_metrics()
-    
     try:
+        con = get_db_connection()
+        scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
+
         null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
         
         test_data_df = con.execute("SELECT * FROM metric_test_data_entries").df()
@@ -109,7 +89,7 @@ def compute_metrics_df2():
     start_time = time.time()
     
     con = get_db_connection()
-    scalars = get_scalar_metrics()
+    scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
 
     try:
 
@@ -140,12 +120,6 @@ def compute_metrics_df2():
         "plausi_forderung_einigung_avg_diff": plausi_diff_list.mean() if not plausi_diff_list.empty else 0,
         "false_negative": scalars['count_false_negative_df2']
     }
-    
-    con = get_db_connection()
-    total_rows = scalars['count_total_positions']
-    _, df2_temp = load()
-    metrics_df2["null_ratio_rows"] = (df2_temp.isnull().any(axis=1).sum() / len(df2_temp) * 100) if len(df2_temp) > 0 else 0
-    con.close()
 
     print(f"Loaded metrics for df2 in {round(time.time() - start_time, 2)}s")
     return metrics_df2
@@ -157,7 +131,7 @@ def compute_metrics_combined():
     start_time = time.time()
     
     con = get_db_connection()
-    scalars = get_scalar_metrics()
+    scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
     
     try:
         auftraege_abgleich_df = con.execute("SELECT * FROM metric_order_pos_mismatch").df()
@@ -273,45 +247,41 @@ with nav_col2:
 
 if selected == "Startseite":
     start = time.time()
-    df, df2 = load()
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page1.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    pos_time = compute_positions_over_time()
+    page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time)
     print("page 1 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Numerische Daten":
     start = time.time()
-    df, df2 = load()
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page2.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page2.show_page(metrics_df1, metrics_df2, metrics_combined)
     print("page 2 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Textuelle Daten":
     start = time.time()
-    df, df2 = load()
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page3.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page3.show_page(metrics_df1, metrics_df2, metrics_combined)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
     start = time.time()
-    df, df2 = load()
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page4.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page4.show_page(metrics_df1, metrics_df2, metrics_combined)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Data Drift":
     start = time.time()
-    df, df2 = load()
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page5.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page5.show_page(metrics_df1, metrics_df2, metrics_combined)
     print("page 5 render time:", round(time.time() - start, 2), "s")

@@ -1,13 +1,11 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import metrics as mt
 
-def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
+def show_page(metrics_df1, metrics_df2, metrics_combined):
 
-    zeitwert_error_df = metrics_df1.get("zeitwert_error_df", mt.check_zeitwert(df))
-    zeitwert_error_count = metrics_df1.get("zeitwert_errors_count", 0)
-    above_50k_df = metrics_df1.get("above_50k_df", mt.above_50k(df))
+    zeitwert_error_df = metrics_df1.get("zeitwert_error_df", pd.NA)
+    zeitwert_error_count = metrics_df1.get("zeitwert_errors_count", pd.NA)
+    above_50k_df = metrics_df1.get("above_50k_df", pd.NA)
     above_50k_count = above_50k_df.size
 
     auftraege_abgleich = metrics_combined.get("auftraege_abgleich")

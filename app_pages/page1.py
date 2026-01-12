@@ -1,18 +1,17 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import metrics as mt
 
-def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
+def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df):
 
     # --- KPI-BEREICH (6 Kacheln) ---
     kpi_cols = st.columns(6)
 
-    row_count_df1 = metrics_df1.get("row_count", len(df))
-    row_count_df2 = metrics_df2.get("row_count", len(df2))
-    null_rows_df1 = metrics_df1.get("null_ratio_rows", mt.ratio_null_values_rows(df))
-    null_rows_df2 = metrics_df2.get("null_ratio_rows", mt.ratio_null_values_rows(df2))
-    proforma_count = metrics_df1.get("proforma_belege_count", 0)
+    row_count_df1 = metrics_df1.get("row_count", pd.NA)
+    row_count_df2 = metrics_df2.get("row_count", pd.NA)
+    null_rows_df1 = metrics_df1.get("null_ratio_rows", pd.NA)
+    null_rows_df2 = metrics_df2.get("null_ratio_rows", pd.NA)
+    proforma_count = metrics_df1.get("proforma_belege_count", pd.NA)
 
     kva_unique = metrics_combined.get("kvarechnung_id_is_unique", None)
     pos_unique = metrics_combined.get("position_id_is_unique", None)
@@ -136,10 +135,6 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
 
     # Chart 3: Avg. Positionen pro Auftrag über Monat (Trend)
     st.subheader("Positionen pro Auftrag über Zeit (Monat)")
-    try:
-        pot_df = mt.positions_per_order_over_time(df, df2, time_col="CRMEingangszeit")
-    except Exception:
-        pot_df = None
 
     if isinstance(pot_df, pd.DataFrame) and not pot_df.empty and {
         "Zeitperiode", "Avg_Positionen_pro_Auftrag", "Total_Positionen", "Anzahl_Auftraege"
