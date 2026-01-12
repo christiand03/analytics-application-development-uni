@@ -8,7 +8,7 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
     anteil = kundengruppe_containing_test / len(df) * 100
 
     # outlier KPI
-    outlier_count = 0 if df_outlier is None else len(df_outlier)
+    outlier_count = 0 if df_outlier is None else len(df_outlier[df_outlier['is_outlier'] == True])
     outlier_share = outlier_count / len(df) * 100 if len(df) else 0
 
     kpi_cols = st.columns(2)

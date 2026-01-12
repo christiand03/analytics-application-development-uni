@@ -439,6 +439,7 @@ def above_50k(df):
         Data frame containing suspiciously high positions
     """
     suspicious_data = df[df['Einigung_Netto'] >= 50000]
+    suspicious_data = suspicious_data[['KvaRechnung_ID', 'Forderung_Netto', 'Empfehlung_Netto', 'Einigung_Netto', 'Kundengruppe', 'Handwerker_Name']]
     return suspicious_data
 
 
@@ -457,8 +458,13 @@ def check_zeitwert(df):
     """
     
     difference = (df['Forderung_Netto'] - df['Einigung_Netto']).round(2) - (df['Differenz_vor_Zeitwert_Netto']).round(2)
-    zeitwert_error = difference[difference != 0] # positive = not enough difference, negative = too much difference
-    return zeitwert_error
+    mask = difference != 0 # positive = not enough difference, negative = too much difference
+    
+    result_df = pd.DataFrame({
+        'KvaRechnung_ID': df.loc[mask, 'KvaRechnung_ID'],
+        'Differenz Zeitwert': difference[mask]
+    })
+    return result_df
             
 
 #print(false_negative_df2(df2))
@@ -803,30 +809,31 @@ def abgleich_auftraege(df1, df2):
 if __name__ == "__main__":
     df, df2 = load_data()
 
-    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
-    start_time = time.time()
-    result = get_mismatched_entries(df)
-    end_time = time.time()
-    print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+    # df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
+    # start_time = time.time()
+    # result = get_mismatched_entries(df)
+    # end_time = time.time()
+    # print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
 
-    # Ausgabe
-    print(f"\nGefundene Unstimmigkeiten: {len(result)}")
-    print("-" * 50)
-    if not result.empty:
-        print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
-    else:
-        print("Alles scheint zu passen!")
-
-
-    start_time = time.time()
-    ergebnis = abgleich_auftraege(df, df2)
-    print("Aufträge mit Abweichungen:")
-    print(ergebnis)
-    end_time = time.time()
-    print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+    # # Ausgabe
+    # print(f"\nGefundene Unstimmigkeiten: {len(result)}")
+    # print("-" * 50)
+    # if not result.empty:
+    #     print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
+    # else:
+    #     print("Alles scheint zu passen!")
 
 
-    df_added = handwerker_gewerke_outlier(df)
-    df_true = df_added[df_added['is_outlier'] == True].copy()
-    df_true['Check_Result'] = check_keywords_vectorized(df_true)
-    print(df_true)
+    # start_time = time.time()
+    # ergebnis = abgleich_auftraege(df, df2)
+    # print("Aufträge mit Abweichungen:")
+    # print(ergebnis)
+    # end_time = time.time()
+    # print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+
+
+    # df_added = handwerker_gewerke_outlier(df)
+    # df_true = df_added[df_added['is_outlier'] == True].copy()
+    # df_true['Check_Result'] = check_keywords_vectorized(df_true)
+    # print(df_true)
+    print(above_50k(df))

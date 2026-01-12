@@ -31,5 +31,5 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
         st.subheader("Aufträge über 50.000€:")
         st.dataframe(above_50k_df)
 
-    st.subheader("Abgleich ob Positionssummen mit Auftragssummen übereinstimmen")
+    st.subheader("Abweichungen Auftragssumme vs. Positionssummen:")
     st.dataframe(auftraege_abgleich)
