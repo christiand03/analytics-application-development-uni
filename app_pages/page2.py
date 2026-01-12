@@ -5,7 +5,7 @@ import metrics as mt
 
 def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
 
-    zeitwert_error_series = metrics_df1.get("zeitwert_error_series", mt.check_zeitwert(df))
+    zeitwert_error_df = metrics_df1.get("zeitwert_error_df", mt.check_zeitwert(df))
     zeitwert_error_count = metrics_df1.get("zeitwert_errors_count", 0)
     above_50k_df = metrics_df1.get("above_50k_df", mt.above_50k(df))
     above_50k_count = above_50k_df.size
@@ -25,7 +25,7 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
 # Welche Spalten sollten noch rein um die Daten sinnvoll prüfen zu können? Aktuell kein Spaltenname da Series
     with chart_col1:
         st.subheader("Die inkorrekten Zeitwerte:")
-        st.dataframe(zeitwert_error_series)
+        st.dataframe(zeitwert_error_df)
 
     with chart_col2:
         st.subheader("Aufträge über 50.000€:")

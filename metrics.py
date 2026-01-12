@@ -453,8 +453,8 @@ def check_zeitwert(df):
         DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
     Returns
     -------
-    zeitwert_error: pandas.Series
-        Series of all error values (float) found in the data frame
+    result_df: pandas.DataFrame
+        DataFrame of all error values (float) alongside the ID found in the original data frame
     """
     
     difference = (df['Forderung_Netto'] - df['Einigung_Netto']).round(2) - (df['Differenz_vor_Zeitwert_Netto']).round(2)

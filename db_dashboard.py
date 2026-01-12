@@ -67,13 +67,12 @@ def compute_metrics_df1():
         above_50k_df = con.execute("SELECT * FROM metric_above_50k").df()
 
         zeitwert_df = con.execute("SELECT * FROM metric_zeitwert_errors").df()
-        zeitwert_errors_series = zeitwert_df['zeitwert_diff'] if not zeitwert_df.empty else pd.Series(dtype=float)
 
         error_freq_df = con.execute("SELECT * FROM metric_error_heatmap").df()
 
         handwerker_outliers = con.execute("SELECT * FROM metric_handwerker_outliers").df()
         
-        semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
+        #semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
     finally:
         con.close()
@@ -92,12 +91,12 @@ def compute_metrics_df1():
         "proforma_belege_df": proforma_df,
         "proforma_belege_count": scalars['count_proforma_receipts'],
         "above_50k_df": above_50k_df,
-        "zeitwert_errors_list": zeitwert_errors_series,
-        "zeitwert_errors_count": zeitwert_errors_series.size,
+        "zeitwert_errors_df": zeitwert_df,
+        "zeitwert_errors_count": len(zeitwert_df),
         "error_frequency_weekday_hour": error_freq_df,
         "false_negative": scalars['count_false_negative_df'],
         "handwerker_gewerke_outlier": handwerker_outliers,
-        "mismatched_entries": semantic_mismatches
+        #"mismatched_entries": semantic_mismatches
     }
     
     print(f"Loaded metrics for df1 in {round(time.time() - start_time, 2)}s")
