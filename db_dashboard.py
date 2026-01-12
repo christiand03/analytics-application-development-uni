@@ -51,7 +51,11 @@ def compute_metrics_df1():
         error_freq_df = con.execute("SELECT * FROM metric_error_heatmap").df()
 
         handwerker_outliers = con.execute("SELECT * FROM metric_handwerker_outliers").df()
-        
+
+        fn_stats_df1 = con.execute("SELECT * FROM metric_fn_stats_df1").df()
+        fn_details_df1 = con.execute("SELECT * FROM metric_fn_details_df1").df()
+        plausi_outliers = con.execute("SELECT * FROM metric_plausi_outliers_df1").df()
+
         #semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
     finally:
@@ -76,6 +80,9 @@ def compute_metrics_df1():
         "error_frequency_weekday_hour": error_freq_df,
         "false_negative": scalars['count_false_negative_df'],
         "handwerker_gewerke_outlier": handwerker_outliers,
+        "false_negative_stats": fn_stats_df1,
+        "false_negative_details": fn_details_df1,
+        "plausi_outliers": plausi_outliers,
         #"mismatched_entries": semantic_mismatches
     }
     
@@ -105,6 +112,12 @@ def compute_metrics_df2():
             GROUP BY KvaRechnung_ID
         """).df()
 
+        plausi_outliers2 = con.execute("SELECT * FROM metric_plausi_outliers_df2").df()
+        fn_stats_df2 = con.execute("SELECT * FROM metric_fn_stats_df2").df()
+        fn_details_df2 = con.execute("SELECT * FROM metric_fn_details_df2").df()
+        disc_stats = con.execute("SELECT * FROM metric_discount_stats").df()
+        disc_details = con.execute("SELECT * FROM metric_discount_details").df()
+
     finally:
         con.close()
 
@@ -118,7 +131,12 @@ def compute_metrics_df2():
         "plausi_forderung_einigung_list": plausi_diff_list,
         "plausi_forderung_einigung_count": plausi_diff_list.size, 
         "plausi_forderung_einigung_avg_diff": plausi_diff_list.mean() if not plausi_diff_list.empty else 0,
-        "false_negative": scalars['count_false_negative_df2']
+        "false_negative": scalars['count_false_negative_df2'],
+        "false_negative_stats": fn_stats_df2,
+        "false_negative_details": fn_details_df2,
+        "discount_stats": disc_stats,
+        "discount_details": disc_details,
+        "plausi_outliers": plausi_outliers2
     }
 
     print(f"Loaded metrics for df2 in {round(time.time() - start_time, 2)}s")

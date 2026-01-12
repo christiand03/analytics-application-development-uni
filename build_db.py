@@ -257,8 +257,33 @@ df_outliers_true['Check_Result'] = mt.check_keywords_vectorized(df_outliers_true
 con.execute("CREATE OR REPLACE TABLE metric_handwerker_outliers AS SELECT * FROM df_outliers_true")
 
 print("14. Semantic Handwerker Mismatches")
-df_semantic = mt.get_mismatched_entries(df)
-con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
+#df_semantic = mt.get_mismatched_entries(df)
+#con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
+df_semantic = []
+# Optional: Leere Tabelle in DB anlegen, falls das Dashboard danach sucht
+con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT 'dummy' as col1 WHERE 1=0")
+
+print("Calculating Extended Chart Data...")
+# page4 Tab 1
+plausi_outliers = mt.get_plausi_outliers(df)
+con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df1 AS SELECT * FROM plausi_outliers")
+plausi_outliers2 = mt.get_plausi_outliers_df2(df2)
+con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df2 AS SELECT * FROM plausi_outliers2")
+
+# page4 Tab 2
+disc_stats, disc_details = mt.get_discount_details(df2)
+con.execute("CREATE OR REPLACE TABLE metric_discount_stats AS SELECT * FROM disc_stats")
+con.execute("CREATE OR REPLACE TABLE metric_discount_details AS SELECT * FROM disc_details")
+
+# page4 Tab 4
+fn_stats1, fn_details1 = mt.get_fn_df1_details(df)
+con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df1 AS SELECT * FROM fn_stats1")
+con.execute("CREATE OR REPLACE TABLE metric_fn_details_df1 AS SELECT * FROM fn_details1")
+
+# page4 Tab 5
+fn_stats2, fn_details2 = mt.get_fn_df2_details(df2)
+con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df2 AS SELECT * FROM fn_stats2")
+con.execute("CREATE OR REPLACE TABLE metric_fn_details_df2 AS SELECT * FROM fn_details2")
 
 print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)

@@ -26,14 +26,14 @@ def ratio_null_values_column(input_df):
         DataFrame of the form
           |column_name |  null_ratio (float)|
         with null_ratio being the percentage amount of null entries in the column  
-    """    
+    """
     # length_df = len(input_df)
     # ratio_dict = {}
     # for column in input_df.columns:
     #     null_values = input_df[column].isna().sum()
     #     ratio_null = round(null_values / length_df * 100, 2) # In Percent
     #     ratio_dict[column] = ratio_null
-    
+
     # return ratio_dict
     null_ratio_df = pd.DataFrame(input_df.isna()
                              .mean()
@@ -58,7 +58,7 @@ def ratio_null_values_rows(input_df, relevant_columns=None):
     -------
     row_ratio: float
         Percentage value of rows with at least one null value in the given columns.
-    """    
+    """
     if relevant_columns is None:
         df_to_check = input_df
     else:
@@ -89,12 +89,12 @@ def Kundengruppe_containing_test(df, return_frame=False):
         total number of test data rows.
     test_Kundengruppen: pandas.DataFrame or None
         DataFrame containing all found test data, returned only if return_frame = True
-    """    
+    """
     test_Kundengruppen = df[df['Kundengruppe'].str.contains('test', case=False, na=False)]
     #anzahl_test = len(df[df['Kundengruppe'].str.contains('test', case=False, na=False)])
     anzahl_test = len(test_Kundengruppen)
     if return_frame:
-        return anzahl_test, test_Kundengruppen 
+        return anzahl_test, test_Kundengruppen
     else:
         return anzahl_test
 
@@ -119,7 +119,7 @@ def allgemeine_statistiken_num(input_df):
         
     """
     statistiken = {}
-    
+
     for num_col in input_df.select_dtypes('number').columns:
         statistiken[num_col] = {}
         mean = input_df[num_col].mean()
@@ -154,14 +154,14 @@ def plausibilitaetscheck_forderung_einigung(input_df):
         avg: float
             average difference over all found instances    
     """
-    #set filter 
+    #set filter
     faulty_rows_mask = input_df['Einigung_Netto'].round(2) > input_df['Forderung_Netto'].round(2)
     #count amount of positives
     count = faulty_rows_mask.sum()
 
     statistik = (input_df.loc[faulty_rows_mask, 'Einigung_Netto']-input_df.loc[faulty_rows_mask,'Forderung_Netto']).round(2)
     avg = statistik.mean()
-    
+
     return statistik, count, avg
 
 
@@ -184,7 +184,7 @@ def uniqueness_check(df, df2):
     """
     kvarechnung_id_is_unique = df['KvaRechnung_ID'].is_unique
     position_id_is_unique = df2['Position_ID'].is_unique
-    
+
     return kvarechnung_id_is_unique, position_id_is_unique
 
 
@@ -204,7 +204,7 @@ def count_rows(input_df):
     count = len(input_df)
     return count
 
- 
+
 def split_dataframe(input_df, chunks=5):
     """ Splits the data frame to simulate a time series data.
         
@@ -235,7 +235,7 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
         Series containing the row ratios of all groups as float.
     grouped_col_ratios: pandas.DataFrame or None
         DataFrame containing groups and null-value-ratios per column for each.             
-    """      
+    """
     #group_by_col = "Kundengruppe" #needs to be set by Frontend, remove this once implemented in dashboard
 
     if group_by_col is None:
@@ -245,24 +245,24 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
         return null_ratio_rows, null_ratio_cols
 
     else:
-            
+
         grouped = input_df.groupby(group_by_col,observed=True)
-        
+
         # Group for columns & rows
         grouped_null_counts = grouped.apply(lambda x: x.isnull().sum())
         grouped_null_rows = grouped.apply(lambda x: x.isnull().any(axis=1).sum())
-        
+
         # create group sizes
         group_sizes = grouped.size()
-        
+
         # calculate ratios
         grouped_col_ratios = grouped_null_counts.div(group_sizes, axis=0)
         grouped_row_ratios = grouped_null_rows / group_sizes
         if specific_group:
             grouped_col_ratios = grouped_col_ratios.loc[[specific_group]]
-            grouped_row_ratios = grouped_row_ratios.loc[[specific_group]] 
+            grouped_row_ratios = grouped_row_ratios.loc[[specific_group]]
         return grouped_row_ratios, grouped_col_ratios
-        
+
 
 
 def groupby_col(input_df, col):
@@ -364,11 +364,11 @@ def false_negative_df(df):
     is_negative = {# Select all rows with negative entries in given column
         "Einigung_Netto": df['Einigung_Netto'] < 0,
         "Empfehlung_Netto": df["Empfehlung_Netto"] < 0,
-        "Forderung_Netto": df["Forderung_Netto"] < 0, 
+        "Forderung_Netto": df["Forderung_Netto"] < 0,
     }
 
     others_are_negative = {# Select all rows with both other columns being negative
-        "Einigung_Netto": (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0), 
+        "Einigung_Netto": (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0),
         "Empfehlung_Netto": (df['Forderung_Netto'] < 0) & (df['Einigung_Netto'] < 0),
        "Forderung_Netto": (df['Einigung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0),
     }
@@ -394,7 +394,7 @@ def false_negative_df(df):
 
     # error_count = len(einigung_false_data) + len(empfehlung_false_data) + len(forderung_false_data)
     # return error_count
- 
+
 
 
 
@@ -456,16 +456,16 @@ def check_zeitwert(df):
     result_df: pandas.DataFrame
         DataFrame of all error values (float) alongside the ID found in the original data frame
     """
-    
+
     difference = (df['Forderung_Netto'] - df['Einigung_Netto']).round(2) - (df['Differenz_vor_Zeitwert_Netto']).round(2)
     mask = difference != 0 # positive = not enough difference, negative = too much difference
-    
+
     result_df = pd.DataFrame({
         'KvaRechnung_ID': df.loc[mask, 'KvaRechnung_ID'],
         'Differenz Zeitwert': difference[mask]
     })
     return result_df
-            
+
 
 #print(false_negative_df2(df2))
 # sollte auf jeden fall positions_count() nutzen
@@ -597,39 +597,39 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
 
 
 def get_mismatched_entries(df, threshold=0.2):
-    
+
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
     model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=device)
-    
+
     unique_gewerke = df['Gewerk_Name'].unique()
     unique_handwerker = df['Handwerker_Name'].unique()
 
     emb_gewerke_dict = {
         name: vec for name, vec in zip(
-            unique_gewerke, 
+            unique_gewerke,
             model.encode(unique_gewerke, batch_size=64, show_progress_bar=False, device=device)
         )
     }
-    
+
     emb_handwerker_dict = {
         name: vec for name, vec in zip(
-            unique_handwerker, 
+            unique_handwerker,
             model.encode(unique_handwerker, batch_size=64, show_progress_bar=False, device=device)
         )
     }
 
     embeddings_gewerk = np.array([emb_gewerke_dict[name] for name in df['Gewerk_Name']])
     embeddings_handwerker = np.array([emb_handwerker_dict[name] for name in df['Handwerker_Name']])
-    
+
     cosine_dists = paired_cosine_distances(embeddings_gewerk, embeddings_handwerker)
-    
+
 
     df['Similarity_Score'] = 1 - cosine_dists
-    
+
     mismatches = df[df['Similarity_Score'] < threshold].copy()
     mismatches = mismatches.sort_values(by='Similarity_Score', ascending=True)
-    
+
     return mismatches
 
 def handwerker_gewerke_outlier(df):
@@ -639,7 +639,7 @@ def handwerker_gewerke_outlier(df):
     total_counts = df.groupby('Handwerker_Name', observed=True).size().reset_index(name='total_count')
 
     stats = stats.merge(total_counts, on='Handwerker_Name')
-    stats['ratio'] = stats['count'] / stats['total_count'] 
+    stats['ratio'] = stats['count'] / stats['total_count']
 
     stats['anzahl_gewerke'] = stats.groupby('Handwerker_Name', observed=True)['Gewerk_Name'].transform('count')
     stats['is_outlier'] = (stats['anzahl_gewerke'] > 1) & (stats['ratio'] < 0.2)
@@ -648,7 +648,7 @@ def handwerker_gewerke_outlier(df):
     return stats
 
 def check_keywords_vectorized(df):
-    
+
     keywords_mapping = {
     'Heizung- und Sanitärinstallation': ['heizung', 'sanitär', 'bad', 'gas', 'wasser', 'hls', 'wärme', 'installateur', 'haustechnik', 'therme', 'leckage'],
     'Metallbau- und Schlosserarbeiten': ['metall', 'schlosser', 'stahlbau', 'schweiß', 'schmiede', 'konstruktion', 'edelstahl'],
@@ -713,28 +713,28 @@ def check_keywords_vectorized(df):
     'Immobilien': ['immobilien', 'makler', 'wohnbau', 'real estate', 'verwaltung', 'property'],
     'Versicherung': ['versicherung', 'finanz', 'assekuranz', 'makler', 'agentur']
     }
-    
-    
-    
+
+
+
     names = df['Handwerker_Name'].astype(str).str.lower()
-    
+
     confirmed_mask = np.zeros(len(df), dtype=bool)
-    
+
     conflict_series = pd.Series([None] * len(df), index=df.index)
-    
+
     for trade, keywords in keywords_mapping.items():
         if not keywords:
             continue
-            
+
         pattern = '|'.join(map(re.escape, keywords))
-        
+
         has_keyword = names.str.contains(pattern, regex=True, na=False)
-        
+
         is_current_trade = (df['Gewerk_Name'] == trade)
         confirmed_mask = confirmed_mask | (has_keyword & is_current_trade)
-        
+
         is_conflict = (has_keyword & ~is_current_trade)
-        
+
         mask_to_update = is_conflict & conflict_series.isna()
         conflict_series.loc[mask_to_update] = f"CONFLICT_WITH_{trade.upper()}"
 
@@ -742,12 +742,12 @@ def check_keywords_vectorized(df):
         confirmed_mask,
         "CONFIRMED_BY_NAME",
         np.where(
-            conflict_series.notna(), 
-            conflict_series, 
+            conflict_series.notna(),
+            conflict_series,
             "NO_KEYWORD_INFO"
         )
     )
-    
+
     return final_result
 
 
@@ -790,20 +790,189 @@ def abgleich_auftraege(df1, df2):
 
     cols_to_fix = ['Forderung_Netto_ist', 'Einigung_Netto_ist']
     merged[cols_to_fix] = merged[cols_to_fix].fillna(0)
-    
+
     merged['Diff_Forderung'] = (merged['Forderung_Netto_soll'] - merged['Forderung_Netto_ist']).round(2)
     merged['Diff_Einigung'] = (merged['Einigung_Netto_soll'] - merged['Einigung_Netto_ist']).round(2)
-    
+
     mask_abweichung = (
-        ~np.isclose(merged['Diff_Forderung'], 0) | 
+        ~np.isclose(merged['Diff_Forderung'], 0) |
         ~np.isclose(merged['Diff_Einigung'], 0)
     )
-    
+
     abweichungen = merged[mask_abweichung].copy()
-    
+
     result_df = abweichungen[['KvaRechnung_ID', 'Diff_Forderung', 'Diff_Einigung',]]
-    
+
     return result_df
+
+
+def get_fn_df1_details(df):
+    """Calculates detailed statistics and specific error instances for the 'Tripel-Vorzeichen' check in 'Auftragsdaten'.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
+
+    Returns
+    -------
+    stats_df: pandas.DataFrame
+        Small DataFrame containing error counts per column (Einigung, Empfehlung, Forderung) for visualization.
+    details_df: pandas.DataFrame
+        DataFrame containing the top 500 most severe error instances.
+    """
+    m_ein = (df['Einigung_Netto'] < 0)
+    m_emp = (df["Empfehlung_Netto"] < 0)
+    m_for = (df["Forderung_Netto"] < 0)
+
+    e_ein = m_ein & ~(m_for & m_emp)
+    e_emp = m_emp & ~(m_for & m_ein)
+    e_for = m_for & ~(m_ein & m_emp)
+
+    stats_df = pd.DataFrame({
+        "Spalte": ["Einigung_Netto", "Empfehlung_Netto", "Forderung_Netto"],
+        "Fehler": [int(e_ein.sum()), int(e_emp.sum()), int(e_for.sum())]
+    })
+
+    full_mask = e_ein | e_emp | e_for
+    details_df = df.loc[full_mask, ["KvaRechnung_ID", "Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"]].copy()
+    if not details_df.empty:
+        details_df["Schwere"] = details_df[["Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"]].abs().max(axis=1)
+        details_df = details_df.sort_values("Schwere", ascending=False).head(500)
+
+    return stats_df, details_df
+
+
+def get_fn_df2_details(df2):
+    """Calculates detailed statistics and specific error instances for consistency checks in 'Positionsdaten'.
+
+    Parameters
+    ----------
+    df2 : pandas.DataFrame
+        DataFrame containing 'Positionsdaten' data set that is to be evaluated.
+
+    Returns
+    -------
+    stats_df: pandas.DataFrame
+        DataFrame containing error counts per category (e.g. 'Menge < 0', 'Vorzeichen Mismatch').
+    details_df: pandas.DataFrame
+        DataFrame containing specific error instances (e.g. sign mismatches).
+    """
+    errors_list = []
+
+    if "Menge" in df2.columns:
+        c = (df2['Menge'] < 0).sum()
+        if c > 0: errors_list.append({"Kategorie": "Menge < 0", "Anzahl": int(c)})
+
+    if "Menge_Einigung" in df2.columns:
+        c = (df2['Menge_Einigung'] < 0).sum()
+        if c > 0: errors_list.append({"Kategorie": "Menge_Einigung < 0", "Anzahl": int(c)})
+
+    mask_ep = (df2['EP'] < 0) ^ (df2['EP_Einigung'] < 0)
+    if mask_ep.sum() > 0:
+        errors_list.append({"Kategorie": "Vorzeichen EP ungleich", "Anzahl": int(mask_ep.sum())})
+
+    mask_betrag = (df2['Forderung_Netto'] < 0) ^ (df2['Einigung_Netto'] < 0)
+    if mask_betrag.sum() > 0:
+        errors_list.append({"Kategorie": "Vorzeichen Betrag ungleich", "Anzahl": int(mask_betrag.sum())})
+
+    stats_df = pd.DataFrame(errors_list)
+
+    details_df = pd.DataFrame()
+    if mask_betrag.any():
+        cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto", "Bezeichnung"]
+
+        if "Position_ID" not in df2.columns:
+            temp_df = df2.loc[mask_betrag].copy()
+            if "Position_ID" not in temp_df.columns:
+                temp_df = temp_df.reset_index()
+                if "index" in temp_df.columns:
+                    temp_df = temp_df.rename(columns={"index": "Position_ID"})
+        else:
+            temp_df = df2.loc[mask_betrag]
+
+        available_cols = [c for c in cols if c in temp_df.columns]
+        details_df = temp_df[available_cols].head(500)
+
+    return stats_df, details_df
+
+
+def get_discount_details(df2):
+    """Aggregates statistics on discount logic errors and returns detailed instances based on the 'Plausibel' column.
+
+    Parameters
+    ----------
+    df2 : pandas.DataFrame
+        DataFrame containing 'Positionsdaten' data set that is to be evaluated.
+
+    Returns
+    -------
+    stats_df: pandas.DataFrame
+        DataFrame with counts of the most frequent descriptions (Bezeichnung) among invalid entries.
+    details_df: pandas.DataFrame
+        DataFrame containing specific invalid rows.
+    """
+    if "Plausibel" not in df2.columns:
+        return pd.DataFrame(), pd.DataFrame()
+
+    mask_err = ~df2["Plausibel"]
+
+    stats_df = pd.DataFrame()
+    if mask_err.any() and "Bezeichnung" in df2.columns:
+        stats_df = df2.loc[mask_err, "Bezeichnung"].value_counts().head(15).reset_index()
+        stats_df.columns = ["Bezeichnung", "Anzahl"]
+
+    cols = ["Position_ID", "Bezeichnung", "Forderung_Netto", "Einigung_Netto", "ist_Abzug"]
+    details_df = df2.loc[mask_err, [c for c in cols if c in df2.columns]].head(500)
+
+    return stats_df, details_df
+
+
+def get_plausi_outliers(df):
+    """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Auftragsdaten'.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
+
+    Returns
+    -------
+    top_outliers: pandas.DataFrame
+        DataFrame containing the top 50 entries with the highest positive difference (Einigung - Forderung).
+    """
+    cols = ["KvaRechnung_ID", "Forderung_Netto", "Einigung_Netto"]
+    df_res = df[cols].copy()
+
+    df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
+
+    df_res = df_res[df_res["Diff"] > 0]
+
+    top_outliers = df_res.nlargest(50, "Diff")
+    return top_outliers
+
+
+def get_plausi_outliers_df2(df2):
+    """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Positionsdaten'.
+
+    Parameters
+    ----------
+    df2 : pandas.DataFrame
+        DataFrame containing 'Positionsdaten' data set that is to be evaluated.
+
+    Returns
+    -------
+    top_outliers: pandas.DataFrame
+        DataFrame containing the top 50 entries with the highest positive difference (Einigung - Forderung).
+    """
+    cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
+
+    df_res = df2[cols].copy()
+
+    df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
+    df_res = df_res[df_res["Diff"] > 0]
+
+    return df_res.nlargest(50, "Diff")
 
 
 if __name__ == "__main__":
