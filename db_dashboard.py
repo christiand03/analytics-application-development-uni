@@ -124,7 +124,7 @@ def compute_metrics_df2():
     metrics_df2 = {
         "row_count": scalars['count_total_positions'],
         "null_ratio_cols": pd.read_sql("SELECT * FROM metric_cleanliness_cols_ungrouped_positionsdaten", get_db_connection()),
-        "null_ratio_rows": scalars['null_ratio_positions'] if 'null_ratio_positions' in scalars else 0, 
+        "null_ratio_rows": scalars['null_row_ratio_positions'] if 'null_row_ratio_positions' in scalars else 0,
         "statistiken_num": statistiken_num,
         "discount_check_errors": scalars['count_discount_logic_errors'],
         "position_counts_per_rechnung": position_counts_df,

@@ -35,8 +35,8 @@ df = df.replace("Kfz", "KFZ")
 df = df.replace("Schliessanlagen", "Schließanlagen")
 
 # --- Optimizing Types for DF (Auftragsdaten) ---
-columns_to_convert = ['Land', 'PLZ_SO', 'PLZ_HW', 'PLZ_VN', 'address1_postalcode', 
-                       'Schadenart_Name', 'Falltyp_Name', 'Gewerk_Name', 'Kundengruppe', 
+columns_to_convert = ['Land', 'PLZ_SO', 'PLZ_HW', 'PLZ_VN', 'address1_postalcode',
+                       'Schadenart_Name', 'Falltyp_Name', 'Gewerk_Name', 'Kundengruppe',
                        'Handwerker_Name']
 
 # Convert Object to Category
@@ -132,22 +132,23 @@ kpi_data = {
     # General
     'count_total_orders': [total_orders],
     'count_total_positions': [total_positions],
-    
+
     # Quality
     'null_row_ratio_orders': [null_ratio_orders],
+    'null_row_ratio_positions': [null_ratio_positions],
     'is_unique_kva_id': [unique_kva],
     'is_unique_position_id': [unique_pos],
-    
+
     # Test Data
     'count_test_data_rows': [test_data_count],
-    
+
     # Logic Errors
     'count_plausibility_errors': [plausibility_error_count],
     'avg_plausibility_diff': [plausibility_avg_diff],
     'count_proforma_receipts': [proforma_count],
     'count_discount_logic_errors': [discount_logic_errors],
-    'count_false_negative_df': [false_negative_df], 
-    'count_false_negative_df2': [false_negative_df2] 
+    'count_false_negative_df': [false_negative_df],
+    'count_false_negative_df2': [false_negative_df2]
 }
 
 df_scalars = pd.DataFrame(kpi_data)
