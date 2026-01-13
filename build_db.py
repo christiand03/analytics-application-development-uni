@@ -3,8 +3,30 @@ import numpy as np
 import duckdb
 import time
 import metrics as mt
+import os
 
-DB_PATH = "resources/dashboard_data.duckdb"
+DB_DIR = "resources"
+DB_NAME = "dashboard_data.duckdb"
+DB_OLD_NAME = "dashboard_data_old.duckdb"
+
+DB_PATH = os.path.join(DB_DIR, DB_NAME)
+DB_OLD_PATH = os.path.join(DB_DIR, DB_OLD_NAME)
+
+print("--- Step 0: Database Rotation ---")
+if os.path.exists(DB_OLD_PATH):
+    try:
+        os.remove(DB_OLD_PATH)
+        print(f"Old backup deleted: {DB_OLD_PATH}")
+    except PermissionError:
+        print(f"WARNING: Could not delete {DB_OLD_PATH}. File might be open?")
+
+if os.path.exists(DB_PATH):
+    try:
+        os.rename(DB_PATH, DB_OLD_PATH)
+        print(f"Existing DB moved to: {DB_OLD_PATH}")
+    except PermissionError:
+        print(f"WARNING: Could not move {DB_PATH}. File might be open?")
+
 start_time = time.time()
 
 print("--- Step 1: Loading Data ---")
@@ -304,9 +326,91 @@ print(df_issues)
 con.execute("CREATE OR REPLACE TABLE issues AS SELECT * FROM df_issues")
 
 
+print("--- Step 9: Comparing with Old Database (Metric Trends) ---")
+
+df_new_combined = pd.concat([df_scalars, df_issues], axis=1)
+df_comparison = df_new_combined.T.reset_index()
+df_comparison.columns = ['Metric', 'Current_Value']
+
+df_old_combined = pd.DataFrame()
+
+if os.path.exists(DB_OLD_PATH):
+    try:
+        con_old = duckdb.connect(DB_OLD_PATH, read_only=True)
+        
+        tables_old = con_old.execute("SHOW TABLES").df()['name'].tolist()
+        
+        old_scalars = pd.DataFrame()
+        old_issues = pd.DataFrame()
+        
+        if 'scalar_metrics' in tables_old:
+            old_scalars = con_old.execute("SELECT * FROM scalar_metrics").df()
+            
+        if 'issues' in tables_old:
+            old_issues = con_old.execute("SELECT * FROM issues").df()
+            
+        con_old.close()
+        
+        if not old_scalars.empty or not old_issues.empty:
+            df_old_combined = pd.concat([old_scalars, old_issues], axis=1)
+            
+    except Exception as e:
+        print(f"WARNING: Can not read old database: {e}")
+else:
+    print("No old database found (first run?). Comparison values are 0.")
+
+
+if not df_old_combined.empty:
+    df_old_long = df_old_combined.T.reset_index()
+    df_old_long.columns = ['Metric', 'Old_Value']
+    
+    df_comparison = pd.merge(df_comparison, df_old_long, on='Metric', how='left')
+    
+    df_comparison['Old_Value'] = df_comparison['Old_Value'].fillna(0)
+    
+else:
+    df_comparison['Old_Value'] = 0.0
+
+df_comparison['Current_Value'] = pd.to_numeric(df_comparison['Current_Value'], errors='coerce').fillna(0)
+df_comparison['Old_Value'] = pd.to_numeric(df_comparison['Old_Value'], errors='coerce').fillna(0)
+
+df_comparison['Absolute_Change'] = df_comparison['Current_Value'] - df_comparison['Old_Value']
+
+def calc_percent(row):
+    old = row['Old_Value']
+    new = row['Current_Value']
+    diff = row['Absolute_Change']
+    
+    if old == 0:
+        if new == 0:
+            return 0.0
+        else:
+            return 100.0
+    
+    return (diff / old) * 100
+
+df_comparison['Percent_Change'] = df_comparison.apply(calc_percent, axis=1).round(2)
+
+df_comparison = df_comparison.sort_values('Metric')
+
+print("Comparison table created:")
+print(df_comparison[['Metric', 'Current_Value', 'Old_Value', 'Percent_Change']].head())
+
+con.execute("CREATE OR REPLACE TABLE metric_comparison AS SELECT * FROM df_comparison")
+
+
 print("\n--- All Complex Metrics Saved Successfully ---")
 end_time = time.time()
 print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
 tables = con.execute("SHOW TABLES").df()
 print(tables)
 con.close()
+
+# Optional: Aufräumen der alten Datenbank nach erfolgreicher Erstellung der neuen
+# print("--- Step 10: Cleaning up ---")
+# if os.path.exists(DB_OLD_PATH):
+#     try:
+#         os.remove(DB_OLD_PATH)
+#         print(f"Old backup deleted: {DB_OLD_PATH}")
+#     except Exception as e:
+#         print(f"WARNING: Could not delete old database: {e}")
