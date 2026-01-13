@@ -8,7 +8,7 @@ from app_pages import page1, page2, page3, page4, page5
 
 st.set_page_config(
     page_title="Data Quality Dashboard",
-    page_icon="assets/logo.png",
+    page_icon="assets/favicon.png",
     layout="wide"
 )
 

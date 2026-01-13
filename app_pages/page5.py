@@ -5,7 +5,6 @@ import data_drift_metrics as ddm
 
 # TODO:Alternative für duckdb schreiben, mit fetch nur bei bedarf
 def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
-    st.title("Data Drift Reports")
     min_date = df["CRMEingangszeit"].min().date()
     max_date = df["CRMEingangszeit"].max().date()
     min_date_6m = df["CRMEingangszeit"].min().date() + pd.Timedelta(weeks=26)
@@ -13,12 +12,13 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
     report_html= None
     path_to_report = None
     #Date-Picker, für Referenzset und Evalset, Quelldatenset
-    with st.expander("Reportauswahl"):
+    with st.expander("Reportauswahl", width=750):
         with st.form("Vergleichszeiträume"):
         
             source_designation = st.selectbox(
                 "Datenquelle",
                 ("Auftragsdaten", "Positionsdaten"),
+                width=175
                 )
             
             col1, col2 = st.columns(2)
@@ -26,13 +26,15 @@ def show_page(df, df2, metrics_df1, metrics_df2, metrics_combined):
                 start_date_reference, end_date_reference = st.date_input(
                     "Referenzrahmen",
                     (min_date,min_date_6m),
-                    min_date,max_date                                   
+                    min_date,max_date, 
+                    width=225                                   
                     )
             with col2:    
                 start_date_eval, end_date_eval = st.date_input(
                     "Vergleichsrahmen",
                     (min_date_6m,min_date_12m),
-                    min_date,max_date
+                    min_date,max_date,
+                    width=225
                     )
                 
             force_reload = st.checkbox("Refresh erzwingen?")
