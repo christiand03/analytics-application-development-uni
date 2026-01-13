@@ -146,112 +146,133 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
 
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 
-    # Chart 3: Avg. Positionen pro Auftrag über Monat (Trend)
+# Chart 3: Avg. Positionen pro Auftrag über Monat (Trend)
     st.subheader("Positionen pro Auftrag über Zeit (Monat)")
 
     if isinstance(pot_df, pd.DataFrame) and not pot_df.empty and {
         "Zeitperiode", "Avg_Positionen_pro_Auftrag", "Total_Positionen", "Anzahl_Auftraege"
     }.issubset(pot_df.columns):
-        # Zeitperiode → Datum wandeln und sortieren
+        
+        # 1. Daten vorbereiten (Datum konvertieren)
         work = pot_df.copy()
         try:
             work["Monat"] = pd.to_datetime(work["Zeitperiode"] + "-01", errors="coerce")
         except Exception:
             work["Monat"] = pd.to_datetime(work["Zeitperiode"], errors="coerce")
+        
         work = work.dropna(subset=["Monat"]).sort_values("Monat").reset_index(drop=True)
 
-        # Ruhige Linie ohne Marker, dunkles Theme
-        base = alt.Chart(work).encode(
-            x=alt.X("Monat:T", title="Monat")
-        )
+        if not work.empty:
+            min_date = work["Monat"].min().date()
+            max_date = work["Monat"].max().date()
 
-        # Y‑Achse dezent: kein erzwungenes 0, angenehme Ticks
-        y_enc = alt.Y(
-            "Avg_Positionen_pro_Auftrag:Q",
-            title="Ø Positionen pro Auftrag",
-            scale=alt.Scale(zero=False, nice=True)
-        )
+            # 2. Zeitraum-Slider einfügen
+            # Wir nutzen st.slider mit value=(min, max) für einen Bereich
+            col_filter, _ = st.columns([2, 1])
+            with col_filter:
+                selected_range = st.slider(
+                    "Zeitraum eingrenzen:",
+                    min_value=min_date,
+                    max_value=max_date,
+                    value=(min_date, max_date),
+                    format="MMM YYYY"
+                )
 
-        line = base.mark_line(color="#7c3aed", strokeWidth=2).encode(
-            y=y_enc,
-            tooltip=[
-                alt.Tooltip("yearmonth(Monat):T", title="Monat"),
-                alt.Tooltip("Avg_Positionen_pro_Auftrag:Q", title="Ø Pos./Auftrag", format=".2f"),
-                alt.Tooltip("Anzahl_Auftraege:Q", title="Anzahl Aufträge", format=","),
-                alt.Tooltip("Total_Positionen:Q", title="Summe Positionen", format=",")
-            ]
-        )
+            # 3. Daten filtern
+            mask = (work["Monat"].dt.date >= selected_range[0]) & (work["Monat"].dt.date <= selected_range[1])
+            filtered_work = work.loc[mask].reset_index(drop=True)
 
-        # Relevante Punkte: letztes, Maximum, Minimum
-        last_idx = len(work) - 1
-        min_idx = int(work["Avg_Positionen_pro_Auftrag"].idxmin()) if len(work) > 0 else None
-        max_idx = int(work["Avg_Positionen_pro_Auftrag"].idxmax()) if len(work) > 0 else None
+            if not filtered_work.empty:
+                # Ruhige Linie ohne Marker, dunkles Theme
+                base = alt.Chart(filtered_work).encode(
+                    x=alt.X("Monat:T", title="Monat")
+                )
 
-        highlight_idx = sorted(set([i for i in [last_idx, min_idx, max_idx] if i is not None]))
-        highlights = work.iloc[highlight_idx].copy() if len(highlight_idx) > 0 else work.iloc[[]]
+                # Y‑Achse dezent
+                y_enc = alt.Y(
+                    "Avg_Positionen_pro_Auftrag:Q",
+                    title="Ø Positionen pro Auftrag",
+                    scale=alt.Scale(zero=False, nice=True)
+                )
 
-        highlight_layer = (
-            alt.Chart(highlights)
-            .mark_point(filled=True, size=80, color="#e5e7eb", fill="#e5e7eb", opacity=0.9)
-            .encode(x="Monat:T", y=y_enc)
-        )
+                line = base.mark_line(color="#7c3aed", strokeWidth=2).encode(
+                    y=y_enc,
+                    tooltip=[
+                        alt.Tooltip("yearmonth(Monat):T", title="Monat"),
+                        alt.Tooltip("Avg_Positionen_pro_Auftrag:Q", title="Ø Pos./Auftrag", format=".2f"),
+                        alt.Tooltip("Anzahl_Auftraege:Q", title="Anzahl Aufträge", format=","),
+                        alt.Tooltip("Total_Positionen:Q", title="Summe Positionen", format=",")
+                    ]
+                )
 
-        # Dezente Labels nur für Max/Min
-        if len(highlights) > 0:
-            highlights["Label"] = highlights.apply(
-                lambda r: "Max" if r.name == max_idx else ("Min" if r.name == min_idx else "Letzter Wert"), axis=1
-            )
-        label_layer = (
-            alt.Chart(highlights)
-            .mark_text(dy=-10, color="#9ca3af", fontSize=11)
-            .encode(x="Monat:T", y=y_enc, text="Label:N")
-        )
+                # Relevante Punkte: letztes, Maximum, Minimum innerhalb der Auswahl
+                last_idx = len(filtered_work) - 1
+                min_idx = int(filtered_work["Avg_Positionen_pro_Auftrag"].idxmin())
+                max_idx = int(filtered_work["Avg_Positionen_pro_Auftrag"].idxmax())
 
-        chart = (line + highlight_layer + label_layer).properties(height=320, width="container")
-        st.altair_chart(chart, use_container_width=True)
+                highlight_idx = sorted(set([i for i in [last_idx, min_idx, max_idx] if i is not None]))
+                highlights = filtered_work.iloc[highlight_idx].copy()
 
-        # Insight‑Text unter dem Chart – 6‑Monats‑Trend (optional)
-        try:
-            last_val = work.loc[last_idx, "Avg_Positionen_pro_Auftrag"] if len(work) else None
-            # 6 Monate zurück (oder erster Punkt, falls weniger vorhanden)
-            ref_idx = max(0, last_idx - 6)
-            ref_val = work.loc[ref_idx, "Avg_Positionen_pro_Auftrag"] if len(work) else None
-        except Exception:
-            last_val, ref_val = None, None
+                highlight_layer = (
+                    alt.Chart(highlights)
+                    .mark_point(filled=True, size=80, color="#e5e7eb", fill="#e5e7eb", opacity=0.9)
+                    .encode(x="Monat:T", y=y_enc)
+                )
 
-        trend_text = ""
-        trend_metric = None
-        if pd.notna(last_val) and pd.notna(ref_val) and ref_val != 0:
-            delta_pct = (last_val - ref_val) / ref_val * 100
-            trend_metric = delta_pct
-            abs_delta = abs(delta_pct)
-            if abs_delta < 2:
-                trend_text = "Stabiler Verlauf"
-            elif abs_delta < 8:
-                trend_text = "Leichter " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " in den letzten 6 Monaten"
+                # Labels nur für Max/Min/Letzter
+                if len(highlights) > 0:
+                    highlights["Label"] = highlights.apply(
+                        lambda r: "Max" if r.name == max_idx else ("Min" if r.name == min_idx else "Letzter Wert"), axis=1
+                    )
+                
+                label_layer = (
+                    alt.Chart(highlights)
+                    .mark_text(dy=-10, color="#9ca3af", fontSize=11)
+                    .encode(x="Monat:T", y=y_enc, text="Label:N")
+                )
+
+                chart = (line + highlight_layer + label_layer).properties(height=320, width="container")
+                st.altair_chart(chart, use_container_width=True)
+
+                # --- Insight-Text Logik (angepasst auf Auswahl) ---
+                trend_text = ""
+                trend_metric = None
+                
+                # Wir vergleichen Start der Auswahl vs. Ende der Auswahl
+                if len(filtered_work) >= 2:
+                    start_val = filtered_work.iloc[0]["Avg_Positionen_pro_Auftrag"]
+                    last_val = filtered_work.iloc[-1]["Avg_Positionen_pro_Auftrag"]
+                    
+                    if pd.notna(start_val) and start_val != 0 and pd.notna(last_val):
+                        delta_pct = (last_val - start_val) / start_val * 100
+                        trend_metric = delta_pct
+                        abs_delta = abs(delta_pct)
+
+                        months_diff = (filtered_work.iloc[-1]["Monat"] - filtered_work.iloc[0]["Monat"]).days // 30
+                        
+                        zeitraum_str = f"im gewählten Zeitraum ({months_diff} Monate)"
+
+                        if abs_delta < 2:
+                            trend_text = f"Stabiler Verlauf {zeitraum_str}"
+                        elif abs_delta < 8:
+                            trend_text = "Leichter " + ("Anstieg" if delta_pct > 0 else "Rückgang") + f" {zeitraum_str}"
+                        else:
+                            trend_text = "Deutlicher " + ("Anstieg" if delta_pct > 0 else "Rückgang") + f" {zeitraum_str}"
+
+                if trend_text == "":
+                    trend_text = "Zeitraum zu kurz für Trendanalyse"
+
+                # Ausgabe: Insight und Trendkennzahl
+                st.caption(trend_text)
+                if trend_metric is not None:
+                    sign = "+" if trend_metric >= 0 else ""
+                    # Farbe basierend auf Vorzeichen (optional)
+                    color = "green" if trend_metric > 0 else "red" if trend_metric < 0 else "gray"
+                    st.markdown(f"Veränderung Auswahl: :{color}[{sign}{trend_metric:.1f}%]")
+
             else:
-                trend_text = "Deutlicher " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " in den letzten 6 Monaten"
+                st.warning("Keine Daten im gewählten Zeitraum verfügbar.")
         else:
-            # Fallback: insgesamt von Start zu Ende
-            if len(work) >= 2:
-                start_val = work.loc[0, "Avg_Positionen_pro_Auftrag"]
-                if pd.notna(start_val) and start_val != 0 and pd.notna(last_val):
-                    delta_pct = (last_val - start_val) / start_val * 100
-                    trend_metric = delta_pct
-                    abs_delta = abs(delta_pct)
-                    if abs_delta < 2:
-                        trend_text = "Stabiler Verlauf"
-                    elif abs_delta < 8:
-                        trend_text = "Leichter " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " seit Beginn"
-                    else:
-                        trend_text = "Deutlicher " + ("Anstieg" if delta_pct > 0 else "Rückgang") + " seit Beginn"
-            if trend_text == "":
-                trend_text = "Verlauf derzeit nicht bewertbar"
-
-        # Ausgabe: Insight und optionale Trendkennzahl
-        st.caption(trend_text)
-        if trend_metric is not None:
-            sign = "+" if trend_metric >= 0 else ""
-            st.caption(f"6‑Monats‑Veränderung: {sign}{trend_metric:.1f}%")
+            st.info("Datensatz enthält keine gültigen Zeitangaben.")
     else:
         st.info("Keine Zeitreihendaten zu Positionen/Auftrag verfügbar.")

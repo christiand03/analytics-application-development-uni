@@ -439,7 +439,7 @@ def above_50k(df):
         Data frame containing suspiciously high positions
     """
     suspicious_data = df[df['Einigung_Netto'] >= 50000]
-    suspicious_data = suspicious_data[['KvaRechnung_ID', 'Forderung_Netto', 'Empfehlung_Netto', 'Einigung_Netto', 'Kundengruppe', 'Handwerker_Name']]
+    suspicious_data = suspicious_data[['KvaRechnung_ID', 'Forderung_Netto', 'Empfehlung_Netto', 'Einigung_Netto', 'Kundengruppe', 'Handwerker_Name', 'CRMEingangszeit']]
     return suspicious_data
 
 
@@ -460,10 +460,9 @@ def check_zeitwert(df):
     difference = (df['Forderung_Netto'] - df['Einigung_Netto']).round(2) - (df['Differenz_vor_Zeitwert_Netto']).round(2)
     mask = difference != 0 # positive = not enough difference, negative = too much difference
 
-    result_df = pd.DataFrame({
-        'KvaRechnung_ID': df.loc[mask, 'KvaRechnung_ID'],
-        'Differenz Zeitwert': difference[mask]
-    })
+    result_df = df.loc[mask, ['KvaRechnung_ID', 'CRMEingangszeit']].copy()
+    result_df['Differenz Zeitwert'] = difference[mask]
+    
     return result_df
 
 
@@ -801,7 +800,7 @@ def abgleich_auftraege(df1, df2):
 
     abweichungen = merged[mask_abweichung].copy()
 
-    result_df = abweichungen[['KvaRechnung_ID', 'Diff_Forderung', 'Diff_Einigung',]]
+    result_df = abweichungen[['KvaRechnung_ID', 'Diff_Forderung', 'Diff_Einigung','CRMEingangszeit']]
 
     return result_df
 

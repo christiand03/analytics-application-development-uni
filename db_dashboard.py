@@ -75,7 +75,7 @@ def compute_metrics_df1():
         "proforma_belege_df": proforma_df,
         "proforma_belege_count": scalars['count_proforma_receipts'],
         "above_50k_df": above_50k_df,
-        "zeitwert_errors_df": zeitwert_df,
+        "zeitwert_error_df": zeitwert_df,
         "zeitwert_errors_count": len(zeitwert_df),
         "error_frequency_weekday_hour": error_freq_df,
         "false_negative": scalars['count_false_negative_df'],
