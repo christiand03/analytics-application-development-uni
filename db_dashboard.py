@@ -179,6 +179,24 @@ def compute_positions_over_time():
     print(f"Loaded positions over time in {round(time.time() - start_time, 2)}s")
     return df_pos_time
 
+@st.cache_data
+def compute_comparison_metrics():
+    print("Loading comparison metrics from DB...")
+    start_time = time.time()
+    
+    con = get_db_connection()
+    try:
+        comparison_df = con.execute("SELECT * FROM metric_comparison").df()
+    except Exception as e:
+        print(f"Error loading comparison table: {e}")
+        comparison_df = pd.DataFrame(columns=['Metric', 'Current_Value', 'Old_Value', 'Absolute_Change', 'Percent_Change'])
+    finally:
+        con.close()
+    
+    print(f"Loaded comparison metrics in {round(time.time() - start_time, 2)}s")
+    return comparison_df
+
+comparison_df = compute_comparison_metrics()
 
 # CSS
 st.markdown("""
@@ -269,7 +287,7 @@ if selected == "Startseite":
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
     pos_time = compute_positions_over_time()
-    page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time)
+    page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time, comparison_df)
     print("page 1 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Numerische Daten":
@@ -277,7 +295,7 @@ elif selected == "Numerische Daten":
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page2.show_page(metrics_df1, metrics_df2, metrics_combined)
+    page2.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 2 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Textuelle Daten":
@@ -285,7 +303,7 @@ elif selected == "Textuelle Daten":
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page3.show_page(metrics_df1, metrics_df2, metrics_combined)
+    page3.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
@@ -293,7 +311,7 @@ elif selected == "Plausibilitätscheck":
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page4.show_page(metrics_df1, metrics_df2, metrics_combined)
+    page4.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Data Drift":
@@ -301,5 +319,5 @@ elif selected == "Data Drift":
     metrics_df1 = compute_metrics_df1()
     metrics_df2 = compute_metrics_df2()
     metrics_combined = compute_metrics_combined()
-    page5.show_page(metrics_df1, metrics_df2, metrics_combined)
+    page5.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 5 render time:", round(time.time() - start, 2), "s")

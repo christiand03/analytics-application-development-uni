@@ -318,7 +318,9 @@ issues = {
     'numeric_issues': [numeric_issues],
     'text_issues': [text_issues],
     'plausi_issues': [plausi_issues],
-    'overall_issues': [overall_issues]
+    'overall_issues': [overall_issues],
+    'count_zeitwert_errors': [len(zeitwert)],
+    'count_above_50k': [len(df_above_50k)]
 }
 
 df_issues = pd.DataFrame(issues)

@@ -2,7 +2,20 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df):
+def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df = None):
+
+    # Helperfunction to get delta from comparison_df
+    def get_delta(metric_name):
+        if comparison_df is None or comparison_df.empty:
+            return None
+        
+        row = comparison_df[comparison_df['Metric'] == metric_name]
+        
+        if not row.empty:
+            val = row.iloc[0]['Percent_Change']
+            return f"{val:+.2f}%"
+        return None
+    
 
     # --- KPI-BEREICH (6 Kacheln) ---
     kpi_cols = st.columns(6)
@@ -17,15 +30,15 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df):
     pos_unique = metrics_combined.get("position_id_is_unique", None)
 
     with kpi_cols[0]:
-        st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).")
+        st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("count_total_orders"), delta_color="off")
     with kpi_cols[1]:
-        st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."), help="Anzahl Zeilen in Positionsdaten (df2).")
+        st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."), help="Anzahl Zeilen in Positionsdaten (df2).", delta=get_delta("count_total_positions"), delta_color="off")
     with kpi_cols[2]:
-        st.metric(label="Fehlerquoten (df) [%]", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df.")
+        st.metric(label="Fehlerquoten (df) [%]", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df.", delta=get_delta("null_row_ratio_orders"), delta_color="inverse")
     with kpi_cols[3]:
-        st.metric(label="Fehlerquoten (df2) [%]", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df2.")
+        st.metric(label="Fehlerquoten (df2) [%]", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df2.", delta=get_delta("null_row_ratio_positions"), delta_color="inverse")
     with kpi_cols[4]:
-        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.")
+        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
     with kpi_cols[5]:
         uniq_text = (
             "OK" if (kva_unique is True and pos_unique is True) else
