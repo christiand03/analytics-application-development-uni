@@ -342,8 +342,6 @@ def position_count(input_df):
         DataFrame with the columns 'KvaRechnung_ID' and the amount of associated positions.  
     """
     position_count = input_df.groupby('KvaRechnung_ID', observed=False)['Position_ID'].count().reset_index().rename(columns={'Position_ID': 'PositionsAnzahl'})
-    print(type(position_count))
-    print(position_count.dtypes)
     return position_count
 
 def empty_orders(df):
