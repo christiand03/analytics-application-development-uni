@@ -232,7 +232,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
                 )
 
                 chart = (line + highlight_layer + label_layer).properties(height=320, width="container")
-                st.altair_chart(chart, use_container_width=True)
+                st.altair_chart(chart, width="stretch")
 
                 # --- Insight-Text Logik (angepasst auf Auswahl) ---
                 trend_text = ""
