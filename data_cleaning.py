@@ -15,6 +15,7 @@ df = df.rename(columns={'Auftrag_ID_x': 'AuftragID', 'Schadensnummer_x': 'Schade
 df2 = pd.merge(df2,df[['KvaRechnung_ID','CRMEingangszeit']], on='KvaRechnung_ID', how='left')
 #add int column with number of positions for every entry in Auftragsdaten
 df = pd.merge(df,mt.position_count(df2), on='KvaRechnung_ID', how='left')
+df['PositionsAnzahl'] = df['PositionsAnzahl'].astype('Int16')
 
 #checking effectivness of dtype changes, before state
 print(f"Memory usage before converting:")
