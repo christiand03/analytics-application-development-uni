@@ -1,5 +1,4 @@
 import time
-import pandas as pd
 import streamlit as st
 import duckdb
 from streamlit_option_menu import option_menu
@@ -36,7 +35,7 @@ def compute_metrics_df1():
     statistiken_num = stats_df.set_index('column_name').T.to_dict()
 
     plausi_df = con.execute("SELECT * FROM metric_plausibility_diffs_auftragsdaten").df()
-    plausi_diff_list = plausi_df['differenz_eur'] if not plausi_df.empty else pd.Series(dtype=float)
+    plausi_diff_list = plausi_df['differenz_eur']
 
     grouped_col_ratios_df1 = con.execute("SELECT * FROM metric_cleanliness_cols_grouped_auftragsdaten").df()
     
@@ -101,7 +100,7 @@ def compute_metrics_df2():
     statistiken_num = stats_df2.set_index('column_name').T.to_dict()
     
     plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
-    plausi_diff_list = plausi_df2['differenz_eur'] if not plausi_df2.empty else pd.Series(dtype=float)
+    plausi_diff_list = plausi_df2['differenz_eur']
 
     position_counts_df = con.execute("""
         SELECT KvaRechnung_ID, COUNT(Position_ID) as PositionsAnzahl 
@@ -114,11 +113,12 @@ def compute_metrics_df2():
     fn_details_df2 = con.execute("SELECT * FROM metric_fn_details_df2").df()
     disc_stats = con.execute("SELECT * FROM metric_discount_stats").df()
     disc_details = con.execute("SELECT * FROM metric_discount_details").df()
+    null_ratio_cols = con.execute("SELECT * FROM metric_cleanliness_cols_ungrouped_positionsdaten").df()
 
 
     metrics_df2 = {
         "row_count": scalars['count_total_positions'],
-        "null_ratio_cols": pd.read_sql("SELECT * FROM metric_cleanliness_cols_ungrouped_positionsdaten", get_db_connection()),
+        "null_ratio_cols": null_ratio_cols,
         "null_ratio_rows": scalars['null_row_ratio_positions'] if 'null_row_ratio_positions' in scalars else 0,
         "statistiken_num": statistiken_num,
         "discount_check_errors": scalars['count_discount_logic_errors'],
@@ -262,19 +262,9 @@ with nav_col2:
 
 # PAGE ROUTING
 metrics_df1 = compute_metrics_df1()
-print(f"DF1 Metric data loaded in {round(time.time() - start_global, 2)}s")
-
-start_df2 = time.time()
 metrics_df2 = compute_metrics_df2()
-print(f"DF2 Metric data loaded in {round(time.time() - start_df2, 2)}s")
-
-start_combined = time.time()
 metrics_combined = compute_metrics_combined()
-print(f"Global data loaded in {round(time.time() - start_combined, 2)}s")
-
-start_comparison = time.time()
 comparison_df = compute_comparison_metrics()
-print(f"Global data loaded in {round(time.time() - start_comparison, 2)}s")
 print(f"Global data loaded in {round(time.time() - start_global, 2)}s")
 
 if selected == "Startseite":
