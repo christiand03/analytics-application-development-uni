@@ -38,7 +38,7 @@ print("--- Step 2: Merging & Cleaning ---")
 df = pd.merge(df, df3, on='KvaRechnung_ID', how='left')
 df = df.drop(["Auftrag_ID_y", "Schadensnummer_y"], axis=1)
 df = df.rename(columns={'Auftrag_ID_x': 'AuftragID', 'Schadensnummer_x': 'Schadensnummer'})
-
+df2 = pd.merge(df2,df[['KvaRechnung_ID','CRMEingangszeit']], on='KvaRechnung_ID', how='left')
 df = pd.merge(df, mt.position_count(df2), on='KvaRechnung_ID', how='left')
 
 # Pre-cleaning memory check
