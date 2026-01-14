@@ -5,61 +5,60 @@ import duckdb
 from streamlit_option_menu import option_menu
 from app_pages import page1, page2, page3, page4, page5
 
-
+start_global = time.time()
 st.set_page_config(
     page_title="Data Quality Dashboard",
     page_icon="assets/favicon.png",
     layout="wide"
 )
 
+@st.cache_resource
 def get_db_connection():
     """Establishes a read-only connection to the DuckDB database."""
     DB_PATH = "resources/dashboard_data.duckdb"
-    return duckdb.connect(DB_PATH, read_only=True)
+    con = duckdb.connect(DB_PATH, read_only=True)
+    return con
 
 
 @st.cache_data
 def compute_metrics_df1():
     print("Loading metrics for df1 (Auftragsdaten) from DB...")
     start_time = time.time()
+
+    con = get_db_connection()
+    scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
+
+    null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
     
-    try:
-        con = get_db_connection()
-        scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
+    test_data_df = con.execute("SELECT * FROM metric_test_data_entries").df()
+    
+    stats_df = con.execute("SELECT * FROM metric_numeric_stats_auftragsdaten").df()
+    statistiken_num = stats_df.set_index('column_name').T.to_dict()
 
-        null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
-        
-        test_data_df = con.execute("SELECT * FROM metric_test_data_entries").df()
-        
-        stats_df = con.execute("SELECT * FROM metric_numeric_stats_auftragsdaten").df()
-        statistiken_num = stats_df.set_index('column_name').T.to_dict()
+    plausi_df = con.execute("SELECT * FROM metric_plausibility_diffs_auftragsdaten").df()
+    plausi_diff_list = plausi_df['differenz_eur'] if not plausi_df.empty else pd.Series(dtype=float)
 
-        plausi_df = con.execute("SELECT * FROM metric_plausibility_diffs_auftragsdaten").df()
-        plausi_diff_list = plausi_df['differenz_eur'] if not plausi_df.empty else pd.Series(dtype=float)
+    grouped_col_ratios_df1 = con.execute("SELECT * FROM metric_cleanliness_cols_grouped_auftragsdaten").df()
+    
+    row_ratios_df = con.execute("SELECT * FROM metric_cleanliness_rows_grouped_auftragsdaten").df()
+    grouped_row_ratios_df1 = row_ratios_df.set_index('Kundengruppe')['row_null_ratio']
 
-        grouped_col_ratios_df1 = con.execute("SELECT * FROM metric_cleanliness_cols_grouped_auftragsdaten").df()
-        
-        row_ratios_df = con.execute("SELECT * FROM metric_cleanliness_rows_grouped_auftragsdaten").df()
-        grouped_row_ratios_df1 = row_ratios_df.set_index('Kundengruppe')['row_null_ratio']
+    proforma_df = con.execute("SELECT * FROM metric_proforma").df()
 
-        proforma_df = con.execute("SELECT * FROM metric_proforma").df()
+    above_50k_df = con.execute("SELECT * FROM metric_above_50k").df()
 
-        above_50k_df = con.execute("SELECT * FROM metric_above_50k").df()
+    zeitwert_df = con.execute("SELECT * FROM metric_zeitwert_errors").df()
 
-        zeitwert_df = con.execute("SELECT * FROM metric_zeitwert_errors").df()
+    error_freq_df = con.execute("SELECT * FROM metric_error_heatmap").df()
 
-        error_freq_df = con.execute("SELECT * FROM metric_error_heatmap").df()
+    handwerker_outliers = con.execute("SELECT * FROM metric_handwerker_outliers").df()
 
-        handwerker_outliers = con.execute("SELECT * FROM metric_handwerker_outliers").df()
+    fn_stats_df1 = con.execute("SELECT * FROM metric_fn_stats_df1").df()
+    fn_details_df1 = con.execute("SELECT * FROM metric_fn_details_df1").df()
+    plausi_outliers = con.execute("SELECT * FROM metric_plausi_outliers_df1").df()
 
-        fn_stats_df1 = con.execute("SELECT * FROM metric_fn_stats_df1").df()
-        fn_details_df1 = con.execute("SELECT * FROM metric_fn_details_df1").df()
-        plausi_outliers = con.execute("SELECT * FROM metric_plausi_outliers_df1").df()
+    #semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
-        #semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
-
-    finally:
-        con.close()
 
     metrics_df1 = {
         "row_count": scalars['count_total_orders'],
@@ -98,28 +97,24 @@ def compute_metrics_df2():
     con = get_db_connection()
     scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
 
-    try:
+    stats_df2 = con.execute("SELECT * FROM metric_numeric_stats_positionsdaten").df()
+    statistiken_num = stats_df2.set_index('column_name').T.to_dict()
+    
+    plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
+    plausi_diff_list = plausi_df2['differenz_eur'] if not plausi_df2.empty else pd.Series(dtype=float)
 
-        stats_df2 = con.execute("SELECT * FROM metric_numeric_stats_positionsdaten").df()
-        statistiken_num = stats_df2.set_index('column_name').T.to_dict()
-        
-        plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
-        plausi_diff_list = plausi_df2['differenz_eur'] if not plausi_df2.empty else pd.Series(dtype=float)
+    position_counts_df = con.execute("""
+        SELECT KvaRechnung_ID, COUNT(Position_ID) as PositionsAnzahl 
+        FROM positionsdaten 
+        GROUP BY KvaRechnung_ID
+    """).df()
 
-        position_counts_df = con.execute("""
-            SELECT KvaRechnung_ID, COUNT(Position_ID) as PositionsAnzahl 
-            FROM positionsdaten 
-            GROUP BY KvaRechnung_ID
-        """).df()
+    plausi_outliers2 = con.execute("SELECT * FROM metric_plausi_outliers_df2").df()
+    fn_stats_df2 = con.execute("SELECT * FROM metric_fn_stats_df2").df()
+    fn_details_df2 = con.execute("SELECT * FROM metric_fn_details_df2").df()
+    disc_stats = con.execute("SELECT * FROM metric_discount_stats").df()
+    disc_details = con.execute("SELECT * FROM metric_discount_details").df()
 
-        plausi_outliers2 = con.execute("SELECT * FROM metric_plausi_outliers_df2").df()
-        fn_stats_df2 = con.execute("SELECT * FROM metric_fn_stats_df2").df()
-        fn_details_df2 = con.execute("SELECT * FROM metric_fn_details_df2").df()
-        disc_stats = con.execute("SELECT * FROM metric_discount_stats").df()
-        disc_details = con.execute("SELECT * FROM metric_discount_details").df()
-
-    finally:
-        con.close()
 
     metrics_df2 = {
         "row_count": scalars['count_total_positions'],
@@ -150,11 +145,7 @@ def compute_metrics_combined():
     
     con = get_db_connection()
     scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
-    
-    try:
-        auftraege_abgleich_df = con.execute("SELECT * FROM metric_order_pos_mismatch").df()
-    finally:
-        con.close()
+    auftraege_abgleich_df = con.execute("SELECT * FROM metric_order_pos_mismatch").df()
 
     metrics_combined = {
         "kvarechnung_id_is_unique": bool(scalars['is_unique_kva_id']),
@@ -171,10 +162,7 @@ def compute_positions_over_time():
     print("Loading positions per order over time from DB...")
     start_time = time.time()
     con = get_db_connection()
-    try:
-        df_pos_time = con.execute("SELECT * FROM metric_positions_over_time").df()
-    finally:
-        con.close()
+    df_pos_time = con.execute("SELECT * FROM metric_positions_over_time").df()
     
     print(f"Loaded positions over time in {round(time.time() - start_time, 2)}s")
     return df_pos_time
@@ -185,18 +173,11 @@ def compute_comparison_metrics():
     start_time = time.time()
     
     con = get_db_connection()
-    try:
-        comparison_df = con.execute("SELECT * FROM metric_comparison").df()
-    except Exception as e:
-        print(f"Error loading comparison table: {e}")
-        comparison_df = pd.DataFrame(columns=['Metric', 'Current_Value', 'Old_Value', 'Absolute_Change', 'Percent_Change'])
-    finally:
-        con.close()
+    comparison_df = con.execute("SELECT * FROM metric_comparison").df()
     
     print(f"Loaded comparison metrics in {round(time.time() - start_time, 2)}s")
     return comparison_df
 
-comparison_df = compute_comparison_metrics()
 
 # CSS
 st.markdown("""
@@ -280,44 +261,44 @@ with nav_col2:
 
 
 # PAGE ROUTING
+metrics_df1 = compute_metrics_df1()
+print(f"DF1 Metric data loaded in {round(time.time() - start_global, 2)}s")
+
+start_df2 = time.time()
+metrics_df2 = compute_metrics_df2()
+print(f"DF2 Metric data loaded in {round(time.time() - start_df2, 2)}s")
+
+start_combined = time.time()
+metrics_combined = compute_metrics_combined()
+print(f"Global data loaded in {round(time.time() - start_combined, 2)}s")
+
+start_comparison = time.time()
+comparison_df = compute_comparison_metrics()
+print(f"Global data loaded in {round(time.time() - start_comparison, 2)}s")
+print(f"Global data loaded in {round(time.time() - start_global, 2)}s")
 
 if selected == "Startseite":
     start = time.time()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
     pos_time = compute_positions_over_time()
     page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time, comparison_df)
     print("page 1 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Numerische Daten":
     start = time.time()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
     page2.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 2 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Textuelle Daten":
     start = time.time()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
     page3.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
     start = time.time()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
     page4.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Data Drift":
     start = time.time()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
     page5.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
     print("page 5 render time:", round(time.time() - start, 2), "s")
