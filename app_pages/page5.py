@@ -127,7 +127,6 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df):
                 start_date_reference, end_date_reference,
                 start_date_eval, end_date_eval
                 )
-            refresh_table()
             st.write("Report erstellt.")
         report_html = open(path_to_report, "r", encoding="utf-8").read()    
         components.html(report_html, height= 1000, scrolling=True)
@@ -135,6 +134,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df):
     dynamic_reset_ph.empty()
     with tab_column:
         with st.expander("Verfügbare Reports", width= 750):
+            refresh_table()
             st.dataframe(st.session_state.reports_table)    
     
 
