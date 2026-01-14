@@ -1,3 +1,5 @@
+### Muss nur ausgeführt werden wenn das Dashboard ohne Datenbank ausgeführt werden soll
+
 import pandas as pd
 import numpy as np
 import metrics as mt

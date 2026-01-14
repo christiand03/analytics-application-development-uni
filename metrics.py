@@ -327,8 +327,7 @@ def proformabelege(df):
     proforma_count = len(proforma)
     return proforma, proforma_count
 
-# das muss noch besser gemacht werden
-# vllt als Spalte in Auftragsdaten_konvertiert? 
+
 def position_count(input_df):
     """Counts the number of positions for each unique KvaRechnung_ID
 
@@ -343,8 +342,26 @@ def position_count(input_df):
         DataFrame with the columns 'KvaRechnung_ID' and the amount of associated positions.  
     """
     position_count = input_df.groupby('KvaRechnung_ID', observed=False)['Position_ID'].count().reset_index().rename(columns={'Position_ID': 'PositionsAnzahl'})
-    #print(type(position_count))
+    print(type(position_count))
+    print(position_count.dtypes)
     return position_count
+
+def empty_orders(df):
+    """Function that checks if any orders do not have positions associated with them.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+         DataFrame with 'Auftragsdaten' data set that is to be evaluated.
+
+    Returns
+    -------
+    empty_orders: int
+          Total amount of orders that do not have any positions associated with them.
+    """
+    empty_orders = df['PositionsAnzahl'].isna().sum()
+    return empty_orders
+
 
 
 def false_negative_df(df):
@@ -1004,4 +1021,3 @@ if __name__ == "__main__":
     # df_true = df_added[df_added['is_outlier'] == True].copy()
     # df_true['Check_Result'] = check_keywords_vectorized(df_true)
     # print(df_true)
-    print(above_50k(df))
