@@ -19,6 +19,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
 
     # DATEN LADEN
     df_outlier = metrics_df1.get("handwerker_gewerke_outlier")
+    df_semantic = metrics_df1.get("mismatched_entries")
     test_data_df = metrics_df1.get("test_data_df", pd.DataFrame()) 
     
     kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl")
@@ -204,82 +205,162 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     st.subheader("Statistische Auffälligkeiten (Handwerker vs. Gewerk)")
     st.caption("Diese Analyse identifiziert Handwerker und Gewerke, bei den auffällig viele Zuordnungsfehler auftreten. (Der Namensabgleich prüft, ob der Handwerkername auf das Gewerk hinweist)")
 
-    if df_outlier is not None and not df_outlier.empty:
+    tab1, tab2 = st.tabs(['Regelbasiert', 'Semantisch'])
 
-        view_mode_outlier = st.radio(
-            "Darstellung (Auffälligkeiten):",
-            ["Grafische Auswertung", "Detail-Tabelle"],
-            horizontal=True,
-            label_visibility="collapsed",
-            key="p3_outlier_view_toggle"
-        )
+    with tab1:
+        if df_outlier is not None and not df_outlier.empty:
 
-        if view_mode_outlier == "Grafische Auswertung":
+            st.caption("Wenn das angegebene Gewerk eines Handwerkers in weniger als 20% seiner gesamten Aufträge vorkommt wird dieses als Ausreißer deklariert. ")
+            st.caption("In der Detail-Tabelle kann zusätzlich eingesehen werden ob ein Keyword aus einem anderen Gewerk im Namen des Handwerkers gefunden wurde als das angegebene Gewerk.")
 
-            st.markdown("#### Fehlerschwerpunkte nach Gewerk")
-            grouped_gewerk = df_outlier['Gewerk_Name'].value_counts().reset_index()
-            grouped_gewerk.columns = ['Gewerk', 'Anzahl']
+            view_mode_outlier = st.radio(
+                "Darstellung (Auffälligkeiten):",
+                ["Grafische Auswertung", "Detail-Tabelle"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="p3_outlier_view_toggle"
+            )
 
-            chart_gewerk = alt.Chart(grouped_gewerk.head(10)).mark_bar().encode(
-                x=alt.X('Anzahl:Q', title="Anzahl Auffälligkeiten"),
-                y=alt.Y('Gewerk:N', sort='-x', title="Gewerk"),
-                tooltip=['Gewerk', 'Anzahl'],
-                color=alt.value("#E4572E")
-            ).properties(height=280)
-            st.altair_chart(chart_gewerk, width="stretch")
+            if view_mode_outlier == "Grafische Auswertung":
 
-            st.markdown("---")
+                st.markdown("#### Fehlerschwerpunkte nach Gewerk")
+                grouped_gewerk = df_outlier['Gewerk_Name'].value_counts().reset_index()
+                grouped_gewerk.columns = ['Gewerk', 'Anzahl']
 
-            st.markdown("#### Top-Verursacher (Handwerker)")
+                chart_gewerk = alt.Chart(grouped_gewerk.head(10)).mark_bar().encode(
+                    x=alt.X('Anzahl:Q', title="Anzahl Auffälligkeiten"),
+                    y=alt.Y('Gewerk:N', sort='-x', title="Gewerk"),
+                    tooltip=['Gewerk', 'Anzahl'],
+                    color=alt.value("#E4572E")
+                ).properties(height=280)
+                st.altair_chart(chart_gewerk, width="stretch")
 
-            df_hw = df_outlier.copy()
+                st.markdown("---")
 
-            grouped_hw = df_hw.groupby('Handwerker_Name', observed=True)['count'].sum().reset_index()
-            grouped_hw.columns = ['Handwerker', 'Summe_Fehler']
+                st.markdown("#### Top-Verursacher")
 
-            grouped_hw = grouped_hw.sort_values('Summe_Fehler', ascending=False).head(10)
+                df_hw = df_outlier.copy()
 
-            chart_hw = alt.Chart(grouped_hw).mark_bar().encode(
-                x=alt.X('Summe_Fehler:Q', title="Summe fehlerhafter Aufträge"),
-                y=alt.Y('Handwerker:N', sort='-x', title="Handwerker"),
-                tooltip=['Handwerker', 'Summe_Fehler'],
-                color=alt.value("#442D7B")
-            ).properties(height=280)
-            st.altair_chart(chart_hw, width="stretch")
+                grouped_hw = df_hw.groupby('Handwerker_Name', observed=True)['count'].sum().reset_index()
+                grouped_hw.columns = ['Handwerker', 'Summe_Fehler']
+
+                grouped_hw = grouped_hw.sort_values('Summe_Fehler', ascending=False).head(10)
+
+                chart_hw = alt.Chart(grouped_hw).mark_bar().encode(
+                    x=alt.X('Summe_Fehler:Q', title="Summe potenziell fehlerhafter Aufträge"),
+                    y=alt.Y('Handwerker:N', sort='-x', title="Handwerker"),
+                    tooltip=['Handwerker', 'Summe_Fehler'],
+                    color=alt.value("#442D7B")
+                ).properties(height=280)
+                st.altair_chart(chart_hw, width="stretch")
+
+            else:
+                # Tabellenansicht Outlier
+                df_display = df_outlier.copy()
+
+                if 'ratio' in df_display.columns:
+                    df_display['ratio'] = (df_display['ratio'] * 100).round(2).astype(str) + '%'
+
+                rename_map = {
+                    "Handwerker_Name": "Handwerker",
+                    "Gewerk_Name": "Gewerk (Auftrag)",
+                    "count": "Anzahl Aufträge",
+                    "ratio": "Anteil am Gesamtvolumen",
+                    "Check_Result": "Namensabgleich"
+                }
+
+                cols_to_show = [c for c in rename_map.keys() if c in df_display.columns]
+
+                st.dataframe(
+                    df_display[cols_to_show].rename(columns=rename_map),
+                    width="stretch",
+                    hide_index=True
+                )
+                
+                # Download Button für die Outlier Tabelle
+                csv_outlier = df_display.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Tabelle als CSV herunterladen",
+                    data=csv_outlier,
+                    file_name="handwerker_outliers.csv",
+                    mime="text/csv"
+                )
 
         else:
-            # Tabellenansicht Outlier
-            df_display = df_outlier.copy()
+            st.success("Keine statistischen Auffälligkeiten in den Daten gefunden.")
 
-            if 'ratio' in df_display.columns:
-                df_display['ratio'] = (df_display['ratio'] * 100).round(2).astype(str) + '%'
+    with tab2:
+        if df_outlier is not None and not df_outlier.empty:
 
-            rename_map = {
-                "Handwerker_Name": "Handwerker",
-                "Gewerk_Name": "Gewerk (Auftrag)",
-                "count": "Anzahl Aufträge",
-                "ratio": "Anteil am Gesamtvolumen",
-                "Check_Result": "Namensabgleich"
-            }
+            st.caption("Es wird ein semantischer Vergleich des Gewerks mit dem Handwerkernamen durchgeführt. Ein zu starker Unterschied wird als fehlerhaft ausgegeben.")
 
-            cols_to_show = [c for c in rename_map.keys() if c in df_display.columns]
-
-            st.markdown(f"**Gefundene Einträge: {len(df_display)}**")
-
-            st.dataframe(
-                df_display[cols_to_show].rename(columns=rename_map),
-                width="stretch",
-                hide_index=True
-            )
-            
-            # Download Button für die Outlier Tabelle
-            csv_outlier = df_display.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Tabelle als CSV herunterladen",
-                data=csv_outlier,
-                file_name="handwerker_outliers.csv",
-                mime="text/csv"
+            view_mode_outlier = st.radio(
+                "Darstellung (Auffälligkeiten):",
+                ["Grafische Auswertung", "Detail-Tabelle"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="p3_semantic_view_toggle"
             )
 
-    else:
-        st.success("Keine statistischen Auffälligkeiten in den Daten gefunden.")
+            if view_mode_outlier == "Grafische Auswertung":
+
+                st.markdown("#### Fehlerschwerpunkte nach Gewerk")
+                grouped_gewerk = df_semantic['Gewerk_Name'].value_counts().reset_index()
+                grouped_gewerk.columns = ['Gewerk', 'Anzahl']
+
+                chart_gewerk = alt.Chart(grouped_gewerk.head(10)).mark_bar().encode(
+                    x=alt.X('Anzahl:Q', title="Anzahl Auffälligkeiten"),
+                    y=alt.Y('Gewerk:N', sort='-x', title="Gewerk"),
+                    tooltip=['Gewerk', 'Anzahl'],
+                    color=alt.value("#E4572E")
+                ).properties(height=280)
+                st.altair_chart(chart_gewerk, width="stretch")
+
+                st.markdown("---")
+
+                st.markdown("#### Top-Verursacher")
+
+                df_sem = df_semantic.copy()
+
+                grouped_hw = df_sem['Handwerker_Name'].value_counts().reset_index()
+                grouped_hw.columns = ['Handwerker', 'Summe_Fehler']
+
+                grouped_hw = grouped_hw.sort_values('Summe_Fehler', ascending=False).head(10)
+
+                chart_hw = alt.Chart(grouped_hw).mark_bar().encode(
+                    x=alt.X('Summe_Fehler:Q', title="Summe potenziell fehlerhafter Aufträge"),
+                    y=alt.Y('Handwerker:N', sort='-x', title="Handwerker"),
+                    tooltip=['Handwerker', 'Summe_Fehler'],
+                    color=alt.value("#442D7B")
+                ).properties(height=280)
+                st.altair_chart(chart_hw, width="stretch")
+
+            else:
+                # Tabellenansicht Outlier
+                df_display = df_semantic[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']].copy()
+
+                rename_map = {
+                    "Handwerker_Name": "Handwerker",
+                    "Gewerk_Name": "Gewerk (Auftrag)",
+                    "Similarity_Score": "Ähnlichkeit"
+                }
+
+                cols_to_show = [c for c in rename_map.keys() if c in df_display.columns]
+
+                st.dataframe(
+                    df_display[cols_to_show].rename(columns=rename_map),
+                    width="stretch",
+                    hide_index=True
+                )
+                
+                # Download Button für die Outlier Tabelle
+                csv_semantic = df_display.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Tabelle als CSV herunterladen",
+                    data=csv_semantic,
+                    file_name="handwerker_semantic.csv",
+                    mime="text/csv"
+                )
+
+        else:
+            st.success("Keine statistischen Auffälligkeiten in den Daten gefunden.")

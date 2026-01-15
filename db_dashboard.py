@@ -57,7 +57,7 @@ def compute_metrics_df1():
     fn_details_df1 = con.execute("SELECT * FROM metric_fn_details_df1").df()
     plausi_outliers = con.execute("SELECT * FROM metric_plausi_outliers_df1").df()
 
-    #semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
+    semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
 
     metrics_df1 = {
@@ -84,7 +84,7 @@ def compute_metrics_df1():
         "false_negative_details": fn_details_df1,
         "plausi_outliers": plausi_outliers,
         "empty_orders_count": scalars['count_empty_orders'],
-        #"mismatched_entries": semantic_mismatches
+        "mismatched_entries": semantic_mismatches
     }
     
     print(f"Loaded metrics for df1 in {round(time.time() - start_time, 2)}s")

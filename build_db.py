@@ -99,6 +99,7 @@ df2[df2_below_four_decimals] = df2[df2_below_four_decimals].astype('float32')
 # Post-cleaning memory check
 print(f"Memory usage after converting (Ready for DB):")
 df.info(memory_usage='deep')
+df2.info(memory_usage='deep')
 
 # Logic for Discounts/Plausibility
 keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Minderung", "Gutschein", "Erlass", "Storno", "Kulanz"]
