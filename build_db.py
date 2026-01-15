@@ -105,7 +105,7 @@ keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Min
 pattern = '|'.join(keywords)
 df2['ist_Abzug'] = df2['Bezeichnung'].str.contains(pattern, case=False, regex=True, na=False)
 
-normal_position = (df2['Einigung_Netto'] > 0) & (df2['ist_Abzug'] == False)
+normal_position = (df2['Einigung_Netto'] >= 0) & (df2['ist_Abzug'] == False)
 discount_position = (df2['Einigung_Netto'] < 0) & (df2['ist_Abzug'] == True)
 df2['Plausibel'] = normal_position | discount_position
 
@@ -276,19 +276,21 @@ print("12. Order/Position Mismatch")
 df_mismatch = mt.abgleich_auftraege(df, df2)
 con.execute("CREATE OR REPLACE TABLE metric_order_pos_mismatch AS SELECT * FROM df_mismatch")
 
-# 13. Handwerker Outliers
+# 13. Handwerker Outliers (Returns DataFrame)
 print("13. Handwerker Outliers")
 df_outlier = mt.handwerker_gewerke_outlier(df)
 df_outliers_true = df_outlier[df_outlier['is_outlier'] == True].copy()
 df_outliers_true['Check_Result'] = mt.check_keywords_vectorized(df_outliers_true)
 con.execute("CREATE OR REPLACE TABLE metric_handwerker_outliers AS SELECT * FROM df_outliers_true")
 
+# 14. Semantic Handwerker Mismatches (Returns DataFrame)
 print("14. Semantic Handwerker Mismatches")
-#df_semantic = mt.get_mismatched_entries(df)
-#con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
-df_semantic = []
-# Optional: Leere Tabelle in DB anlegen, falls das Dashboard danach sucht
-con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT 'dummy' as col1 WHERE 1=0")
+df_semantic = mt.get_mismatched_entries(df)
+con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
+
+# Optional: Leere Tabelle in DB anlegen, falls mt.get_mismatched_entries(df) nicht ausgeführt werden kann
+#df_semantic = []
+#con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT 'dummy' as col1 WHERE 1=0")
 
 print("Calculating Extended Chart Data...")
 # page4 Tab 1

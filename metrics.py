@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import re
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import paired_cosine_distances
 import torch
 
 def load_data():
@@ -243,8 +242,8 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
         grouped = input_df.groupby(group_by_col,observed=True)
 
         # Group for columns & rows
-        grouped_null_counts = grouped.apply(lambda x: x.isnull().sum())
-        grouped_null_rows = grouped.apply(lambda x: x.isnull().any(axis=1).sum())
+        grouped_null_counts = grouped.apply(lambda x: x.isnull().sum(), include_groups=False)
+        grouped_null_rows = grouped.apply(lambda x: x.isnull().any(axis=1).sum(), include_groups=False)
 
         # create group sizes
         group_sizes = grouped.size()
@@ -278,8 +277,7 @@ def groupby_col(input_df, col):
 
     return input_df_grouped
 
-# returns ~750K that cant be right (the most likely reason for this is probably the assumption in the Plausibel logic
-# that rates all 0 entries in Einigung (due to somebody using the manual entry function on-site) as not valid, might ramp the number up significantly)
+
 def discount_check(df2):
     """Checks if a row in the 'Positionsdaten' data set does/doesn't describe a discount or similar and if the 'Einigung_Netto' and 'Forderung_Netto' information accurately reflects this (negative or positive values). 
     
@@ -452,7 +450,7 @@ def check_zeitwert(df):
     """
 
     difference = (df['Forderung_Netto'] - df['Einigung_Netto']).round(2) - (df['Differenz_vor_Zeitwert_Netto']).round(2)
-    mask = difference != 0 # positive = not enough difference, negative = too much difference
+    mask = ~np.isclose(difference, 0, atol=0.01) # positive = not enough difference, negative = too much difference
 
     result_df = df.loc[mask, ['KvaRechnung_ID', 'CRMEingangszeit']].copy()
     result_df['Differenz Zeitwert'] = difference[mask]
@@ -589,39 +587,93 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
     return result
 
 
-def get_mismatched_entries(df, threshold=0.2):
+def get_mismatched_entries(df, threshold=0.2, process_batch_size=16384, encode_batch_size=128):
+    """
+    Calculates the semantic similarity between 'Gewerk_Name' and 'Handwerker_Name' using a 
+    Sentence Transformer model on the GPU. Identifies entries where the similarity score 
+    falls below the threshold.(< 0.2).
+    
+    Parameters:
+    ----------
+        df: pandas.DataFrame
+            DataFrame (Auftragsdaten) that contains the columns 'Gewerk_Name' and 'Handwerker_Name'.
+        threshold: float, optional
+            Similarity threshold (default: 0.2). Values below this limit are considered mismatches.
+            The optimal threshold in a production system would need to be evaluated further. 
+        process_batch_size: int, optional
+            Number of rows to be compared simultaneously (high value possible, e.g. 16384).
+        encode_batch_size: int, optional
+            Number of unique terms to be vectorized simultaneously by the model (low value recommended, e.g. 128).
 
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-
+    Returns:
+    -------
+        mismatches: pandas.DataFrame
+            DataFrame containing rows where 'Similarity_Score' < threshold.
+            The results are sorted ascending by similarity and include the new column 'Similarity_Score'.
+    """
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Running on: {device}")
+    
     model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=device)
 
-    unique_gewerke = df['Gewerk_Name'].unique()
-    unique_handwerker = df['Handwerker_Name'].unique()
-
-    emb_gewerke_dict = {
-        name: vec for name, vec in zip(
-            unique_gewerke,
-            model.encode(unique_gewerke, batch_size=64, show_progress_bar=False, device=device)
-        )
-    }
-
-    emb_handwerker_dict = {
-        name: vec for name, vec in zip(
-            unique_handwerker,
-            model.encode(unique_handwerker, batch_size=64, show_progress_bar=False, device=device)
-        )
-    }
-
-    embeddings_gewerk = np.array([emb_gewerke_dict[name] for name in df['Gewerk_Name']])
-    embeddings_handwerker = np.array([emb_handwerker_dict[name] for name in df['Handwerker_Name']])
-
-    cosine_dists = paired_cosine_distances(embeddings_gewerk, embeddings_handwerker)
+    gewerk_codes, unique_gewerke = pd.factorize(df['Gewerk_Name'])
+    handwerker_codes, unique_handwerker = pd.factorize(df['Handwerker_Name'])
 
 
-    df['Similarity_Score'] = 1 - cosine_dists
+    print("Encoding unique values...")
+    emb_gewerke = model.encode(
+        unique_gewerke, 
+        batch_size=encode_batch_size, 
+        show_progress_bar=True, 
+        convert_to_tensor=True, 
+        device=device,
+        normalize_embeddings=True
+    )
 
+    emb_handwerker = model.encode(
+        unique_handwerker, 
+        batch_size=encode_batch_size, 
+        show_progress_bar=True, 
+        convert_to_tensor=True, 
+        device=device,
+        normalize_embeddings=True
+    )
+
+
+    print("Calculating similarity scores on GPU...")
+    similarity_scores = []
+    
+    total_rows = len(df)
+    
+    t_gewerk_codes = torch.tensor(gewerk_codes, device=device, dtype=torch.long)
+    t_handwerker_codes = torch.tensor(handwerker_codes, device=device, dtype=torch.long)
+
+    with torch.no_grad():
+        for i in range(0, total_rows, process_batch_size):
+            end = min(i + process_batch_size, total_rows)
+            
+            batch_g_codes = t_gewerk_codes[i:end]
+            batch_h_codes = t_handwerker_codes[i:end]
+            
+            batch_emb_g = emb_gewerke[batch_g_codes]
+            batch_emb_h = emb_handwerker[batch_h_codes]
+            
+            sim = torch.nn.functional.cosine_similarity(batch_emb_g, batch_emb_h, dim=1)
+            
+            similarity_scores.append(sim.cpu().numpy())
+
+    full_scores = np.concatenate(similarity_scores)
+    df['Similarity_Score'] = full_scores
+    
     mismatches = df[df['Similarity_Score'] < threshold].copy()
     mismatches = mismatches.sort_values(by='Similarity_Score', ascending=True)
+
+    # Cleanup GPU memory
+    del emb_gewerke
+    del emb_handwerker
+    del t_gewerk_codes
+    del t_handwerker_codes
+    torch.cuda.empty_cache()
 
     return mismatches
 
@@ -970,4 +1022,3 @@ def get_plausi_outliers_df2(df2):
 
 if __name__ == "__main__":
     df, df2 = load_data()
-    print(data_cleanliness(df, group_by_col=None))

@@ -93,7 +93,7 @@ keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Min
 pattern = '|'.join(keywords)
 df2['ist_Abzug'] = df2['Bezeichnung'].str.contains(pattern, case=False, regex=True, na=False)
 #hier ist der Fall von Einigung_Netto = 0 bei Verwendung von manuellem Betrag nicht berücksichtigt, automatisch nicht plausibel
-normal_position = (df2['Einigung_Netto'] > 0) & (df2['ist_Abzug'] == False)
+normal_position = (df2['Einigung_Netto'] >= 0) & (df2['ist_Abzug'] == False)
 discount_position = (df2['Einigung_Netto'] < 0) & (df2['ist_Abzug'] == True)
 
 df2['Plausibel'] = normal_position | discount_position
