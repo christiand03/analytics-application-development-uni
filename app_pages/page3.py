@@ -39,26 +39,29 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
             label="Textuelle Auffälligkeiten",
             value=text_issues,
             delta=get_delta("text_issues"), 
-            delta_color="inverse"
+            delta_color="inverse",
+            help="Textuelle Fehler und Warnings im Datensatz"
         )
-        st.caption(f"Anteil: {anteil_text_issues:.2f}% aller Datensätze")
+        st.caption(f"Anteil: {anteil_text_issues:.2f}% relevanter Datensätze (beide Datensätze)")
     with kpi_cols[1]: 
         st.metric(
             label="Testdatensätze in Kundengruppe",
             value=f"{kundengruppe_containing_test}",
             delta=get_delta("count_test_data_rows"), 
-            delta_color="inverse"
+            delta_color="inverse",
+            help="Anzahl der Aufträge, die als Testdatensätze identifiziert wurden"
         )
-        st.caption(f"Anteil: {anteil_testdaten:.2f}% aller Datensätze")
+        st.caption(f"Anteil: {anteil_testdaten:.2f}% relevanter Datensätze (Auftragsdaten)")
 
     with kpi_cols[2]:
         st.metric(
             label="Auffällige Gewerk-Zuordnungen",
             value=str(outlier_count),
             delta=get_delta("count_handwerker_outliers"), 
-            delta_color="inverse"
+            delta_color="inverse",
+            help="Anzahl der Aufträge mit auffälligen Handwerker-Gewerk Zuordnungen"
         )
-        st.caption(f"Anteil: {outlier_share:.2f}% aller Datensätze")
+        st.caption(f"Anteil: {outlier_share:.2f}% relevanter Datensätze (Auftragsdaten)")
     
 
 
