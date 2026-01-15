@@ -307,7 +307,7 @@ con.execute("CREATE OR REPLACE TABLE metric_discount_stats AS SELECT * FROM disc
 con.execute("CREATE OR REPLACE TABLE metric_discount_details AS SELECT * FROM disc_details")
 
 # page4 Tab 4
-fn_stats1, fn_details1 = mt.get_fn_df1_details(df)
+fn_stats1, fn_details1 = mt.fn_df1_details(df)
 con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df1 AS SELECT * FROM fn_stats1")
 con.execute("CREATE OR REPLACE TABLE metric_fn_details_df1 AS SELECT * FROM fn_details1")
 

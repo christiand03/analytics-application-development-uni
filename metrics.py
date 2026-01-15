@@ -860,7 +860,7 @@ def abgleich_auftraege(df1, df2):
     return result_df
 
 
-def get_fn_df1_details(df):
+def fn_df1_details(df):
     """Calculates detailed statistics and specific error instances for the 'Tripel-Vorzeichen' check in 'Auftragsdaten'.
 
     Parameters
@@ -879,9 +879,10 @@ def get_fn_df1_details(df):
     m_emp = (df["Empfehlung_Netto"] < 0)
     m_for = (df["Forderung_Netto"] < 0)
 
-    e_ein = m_ein & ~(m_for & m_emp)
-    e_emp = m_emp & ~(m_for & m_ein)
-    e_for = m_for & ~(m_ein & m_emp)
+    e_ein = (m_ein != m_emp) & (m_ein != m_for)
+    e_emp = (m_emp != m_ein) & (m_emp != m_for)
+    e_for = (m_for != m_ein) & (m_for != m_emp)
+
 
     stats_df = pd.DataFrame({
         "Spalte": ["Einigung_Netto", "Empfehlung_Netto", "Forderung_Netto"],
@@ -889,11 +890,13 @@ def get_fn_df1_details(df):
     })
 
     full_mask = e_ein | e_emp | e_for
-    details_df = df.loc[full_mask, ["KvaRechnung_ID", "Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"]].copy()
-    if not details_df.empty:
-        details_df["Schwere"] = details_df[["Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"]].abs().max(axis=1)
-        details_df = details_df.sort_values("Schwere", ascending=False)
+    
+    details_df = df.loc[full_mask, [
+        "KvaRechnung_ID", "Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"
+    ]].copy()
 
+    print(f"Länge DF: {len(details_df)}")
+    print(f"Summe Fehler in Stats: {stats_df['Fehler'].sum()}")
     return stats_df, details_df
 
 
@@ -1031,5 +1034,3 @@ def get_discount_details(df2):
 
 if __name__ == "__main__":
     df, df2 = load_data()
-
-    print(plausibilitaetscheck_forderung_einigung(df2))

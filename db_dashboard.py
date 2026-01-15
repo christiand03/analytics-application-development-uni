@@ -26,7 +26,6 @@ def compute_metrics_df1():
 
     con = get_db_connection()
     scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
-    print(type(scalars['count_total_orders']))
 
     null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
     
@@ -54,7 +53,7 @@ def compute_metrics_df1():
 
     fn_stats_df1 = con.execute("SELECT * FROM metric_fn_stats_df1").df()
     fn_details_df1 = con.execute("SELECT * FROM metric_fn_details_df1").df()
-
+    fn_count_df = fn_stats_df1['Fehler'].sum()
     semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
 
@@ -76,7 +75,7 @@ def compute_metrics_df1():
         "zeitwert_error_df": zeitwert_df,
         "zeitwert_errors_count": len(zeitwert_df),
         "error_frequency_weekday_hour": error_freq_df,
-        "false_negative": scalars['count_false_negative_df'],
+        "false_negative": fn_count_df,
         "handwerker_gewerke_outlier": handwerker_outliers,
         "false_negative_stats": fn_stats_df1,
         "false_negative_details": fn_details_df1,
