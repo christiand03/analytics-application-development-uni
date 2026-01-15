@@ -34,16 +34,16 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     # --- KPIs ---
     kpi_cols = st.columns(4)
     with kpi_cols[0]: 
-        st.metric(label="Numerische Auffälligkeiten", value=numeric_issues, delta=get_delta("numeric_issues"), delta_color="inverse", help="Numerische Fehler und Warnings im Datensatz")
+        st.metric(label="Numerische Auffälligkeiten", value=f"{numeric_issues:,}".replace(",", "."), delta=get_delta("numeric_issues"), delta_color="inverse", help="Numerische Fehler und Warnings im Datensatz")
         st.caption(f"Anteil: {anteil_numeric_issues:.2f}% relevanter Datensätze (beide Datensätze)")
     with kpi_cols[1]: 
-        st.metric(label="Fehleranzahl Zeitwerte", value=zeitwert_error_count, delta=get_delta("count_zeitwert_errors"), delta_color="inverse", help="Anzahl der Fehler in Zeitwertspalte")
+        st.metric(label="Fehleranzahl Zeitwerte", value=f"{zeitwert_error_count:,}".replace(",", "."), delta=get_delta("count_zeitwert_errors"), delta_color="inverse", help="Anzahl der Fehler in Zeitwertspalte")
         st.caption(f"Anteil: {anteil_zeitwert:.2f}% relevanter Datensätze (Auftragsdaten)")
     with kpi_cols[2]: 
-        st.metric(label="Anzahl Aufträge über 50.000€", value=above_50k_count, delta=get_delta("count_above_50k"), delta_color="inverse", help="Anzahl der Aufträge mit einem Wert über 50.000€")
+        st.metric(label="Anzahl Aufträge über 50.000€", value=f"{above_50k_count:,}".replace(",", "."), delta=get_delta("count_above_50k"), delta_color="inverse", help="Anzahl der Aufträge mit einem Wert über 50.000€")
         st.caption(f"Anteil: {anteil_above_50k:.2f}% relevanter Datensätze (Auftragsdaten)")
     with kpi_cols[3]: 
-        st.metric(label="Abweichung Summen", value=auftraege_abgleich.shape[0] if auftraege_abgleich is not None else 0, delta=get_delta("count_abweichung_summen"), delta_color="inverse", help="Anzahl der Aufträge mit Abweichungen in den Summen (Auftragssumme = Summe der Positionen)")
+        st.metric(label="Abweichung Summen", value=f"{auftraege_abgleich.shape[0] if auftraege_abgleich is not None else 0:,}".replace(",", "."), delta=get_delta("count_abweichung_summen"), delta_color="inverse", help="Anzahl der Aufträge mit Abweichungen in den Summen (Auftragssumme = Summe der Positionen)")
         st.caption(f"Anteil: {anteil_summe:.2f}% relevanter Datensätze (Auftragsdaten)")
     st.markdown("---")
 

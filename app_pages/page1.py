@@ -33,7 +33,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
     total_issues = issues_df["overall_issues"] if issues_df is not None else 0
 
     with kpi_cols[0]:
-        st.metric(label="Auffälligkeiten", value=total_issues, help="Alle Fehler und Warnings im Datensatz", delta=get_delta("overall_issues"), delta_color="inverse")
+        st.metric(label="Auffälligkeiten", value=f"{total_issues:,}".replace(",", "."), help="Alle Fehler und Warnings im Datensatz", delta=get_delta("overall_issues"), delta_color="inverse")
     with kpi_cols[1]:
         st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("count_total_orders"), delta_color="off")
     with kpi_cols[2]:
