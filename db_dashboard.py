@@ -81,6 +81,7 @@ def compute_metrics_df1():
         "false_negative_stats": fn_stats_df1,
         "false_negative_details": fn_details_df1,
         "plausi_outliers": plausi_outliers,
+        "empty_orders_count": scalars['count_empty_orders'],
         #"mismatched_entries": semantic_mismatches
     }
     

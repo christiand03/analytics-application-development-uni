@@ -127,6 +127,7 @@ print("--- Step 4: Calculating Scalar Metrics ---")
 # --- 1. General Counts ---
 total_orders = mt.count_rows(df)
 total_positions = mt.count_rows(df2)
+empty_orders_count = mt.empty_orders(df)
 
 # --- 2. Data Quality (Nulls & Uniqueness) ---
 null_ratio_orders = mt.ratio_null_values_rows(df)
@@ -155,6 +156,7 @@ kpi_data = {
     # General
     'count_total_orders': [total_orders],
     'count_total_positions': [total_positions],
+    'count_empty_orders': [empty_orders_count],
 
     # Quality
     'null_row_ratio_orders': [null_ratio_orders],
@@ -340,23 +342,23 @@ df_old_combined = pd.DataFrame()
 if os.path.exists(DB_OLD_PATH):
     try:
         con_old = duckdb.connect(DB_OLD_PATH, read_only=True)
-        
+
         tables_old = con_old.execute("SHOW TABLES").df()['name'].tolist()
-        
+
         old_scalars = pd.DataFrame()
         old_issues = pd.DataFrame()
-        
+
         if 'scalar_metrics' in tables_old:
             old_scalars = con_old.execute("SELECT * FROM scalar_metrics").df()
-            
+
         if 'issues' in tables_old:
             old_issues = con_old.execute("SELECT * FROM issues").df()
-            
+
         con_old.close()
-        
+
         if not old_scalars.empty or not old_issues.empty:
             df_old_combined = pd.concat([old_scalars, old_issues], axis=1)
-            
+
     except Exception as e:
         print(f"WARNING: Can not read old database: {e}")
 else:
@@ -366,11 +368,11 @@ else:
 if not df_old_combined.empty:
     df_old_long = df_old_combined.T.reset_index()
     df_old_long.columns = ['Metric', 'Old_Value']
-    
+
     df_comparison = pd.merge(df_comparison, df_old_long, on='Metric', how='left')
-    
+
     df_comparison['Old_Value'] = df_comparison['Old_Value'].fillna(0)
-    
+
 else:
     df_comparison['Old_Value'] = 0.0
 
@@ -383,13 +385,13 @@ def calc_percent(row):
     old = row['Old_Value']
     new = row['Current_Value']
     diff = row['Absolute_Change']
-    
+
     if old == 0:
         if new == 0:
             return 0.0
         else:
             return 100.0
-    
+
     return (diff / old) * 100
 
 df_comparison['Percent_Change'] = df_comparison.apply(calc_percent, axis=1).round(2)

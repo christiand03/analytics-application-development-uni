@@ -18,13 +18,14 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
     
 
     # --- KPI-BEREICH (6 Kacheln) ---
-    kpi_cols = st.columns(6)
+    kpi_cols = st.columns(7)
 
     row_count_df1 = metrics_df1.get("row_count", pd.NA)
     row_count_df2 = metrics_df2.get("row_count", pd.NA)
     null_rows_df1 = metrics_df1.get("null_ratio_rows", pd.NA)
     null_rows_df2 = metrics_df2.get("null_ratio_rows", pd.NA)
     proforma_count = metrics_df1.get("proforma_belege_count", pd.NA)
+    empty_orders = metrics_df1.get("empty_orders_count", 0)
 
     kva_unique = metrics_combined.get("kvarechnung_id_is_unique", None)
     pos_unique = metrics_combined.get("position_id_is_unique", None)
@@ -50,6 +51,14 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
 
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 
+    with kpi_cols[6]:
+        st.metric(
+            label="Aufträge ohne Pos.",
+            value=f"{empty_orders:,}".replace(",", "."),
+            help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer).",
+            delta=get_delta("count_empty_orders"),
+            delta_color="inverse"
+        )
     # CHART-BEREICH
     chart_col1, chart_col2 = st.columns(2)
 
