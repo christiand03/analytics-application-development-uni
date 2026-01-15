@@ -17,15 +17,16 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
         return None
 
 
-    plausi_list_df1 = metrics_df1.get("plausi_forderung_einigung_list", pd.Series(dtype=float))
+    plausi_df1 = metrics_df1.get("plausi_forderung_einigung_df")
+    plausi_list_df1 = plausi_df1['Diff']
     plausi_count_df1 = metrics_df1.get("plausi_forderung_einigung_count", 0)
     plausi_avg_df1 = metrics_df1.get("plausi_forderung_einigung_avg_diff", 0.0)
-    plausi_outliers_df1 = metrics_df1.get("plausi_outliers")
+    plausi_outliers_df1 = metrics_df1.get("plausi_forderung_einigung_df")
 
-    plausi_list_df2 = metrics_df2.get("plausi_forderung_einigung_list", pd.Series(dtype=float))
     plausi_count_df2 = metrics_df2.get("plausi_forderung_einigung_count", 0)
     plausi_avg_df2 = metrics_df2.get("plausi_forderung_einigung_avg_diff", 0.0)
-    plausi_outliers_df2 = metrics_df2.get("plausi_outliers")
+    plausi_outliers_df2 = metrics_df2.get("plausi_forderung_einigung_df2")
+    plausi_list_df2 = plausi_outliers_df2['Diff']
 
     discount_errors = metrics_df2.get("discount_check_errors", 0)
     disc_stats = metrics_df2.get("discount_stats")
@@ -139,6 +140,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
         if not outliers_view.empty:
             with st.expander(f"Details anzeigen ({dataset_choice})"):
                 st.markdown(f"**Gefundene Einträge: {len(outliers_view)}**")
+                outliers_view = outliers_view.sort_values(by="Diff", ascending=False)
                 st.dataframe(outliers_view, width="stretch")
 
                 csv_plausi = outliers_view.to_csv(index=False).encode('utf-8')

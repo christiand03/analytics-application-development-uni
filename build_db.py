@@ -140,8 +140,9 @@ unique_kva, unique_pos = mt.uniqueness_check(df, df2)
 test_data_count = mt.Kundengruppe_containing_test(df, return_frame=False)
 
 # --- 4. Plausibility Checks (Tuples extraction) ---
-# returns: (Series, count, avg) -> ignore the Series (_)
-_, plausibility_error_count, plausibility_avg_diff = mt.plausibilitaetscheck_forderung_einigung(df)
+# returns: (DataFrame, count, avg) -> ignore the DataFrame (_)
+_, plausibility_error_count_df, plausibility_avg_diff_df = mt.plausibilitaetscheck_forderung_einigung(df)
+_, plausibility_error_count_df2, plausibility_avg_diff_df2 = mt.plausibilitaetscheck_forderung_einigung(df2)
 
 # returns: (DataFrame, count) -> ignore the DataFrame (_)
 _, proforma_count = mt.proformabelege(df)
@@ -170,8 +171,10 @@ kpi_data = {
     'count_test_data_rows': [test_data_count],
 
     # Logic Errors
-    'count_plausibility_errors': [plausibility_error_count],
-    'avg_plausibility_diff': [plausibility_avg_diff],
+    'count_plausibility_errors_df': [plausibility_error_count_df],
+    'avg_plausibility_diff_df': [plausibility_avg_diff_df],
+    'count_plausibility_errors_df2': [plausibility_error_count_df2],
+    'avg_plausibility_diff_df2': [plausibility_avg_diff_df2],
     'count_proforma_receipts': [proforma_count],
     'count_discount_logic_errors': [discount_logic_errors],
     'count_false_negative_df': [false_negative_df],
@@ -213,14 +216,12 @@ stats_dict_df2 = mt.allgemeine_statistiken_num(df2)
 df_stats_df2 = pd.DataFrame(stats_dict_df2).T.reset_index().rename(columns={'index': 'column_name'})
 con.execute("CREATE OR REPLACE TABLE metric_numeric_stats_positionsdaten AS SELECT * FROM df_stats_df2")
 
-# 4. Plausibility Check (Returns (Series, int, avg) -> only extract the Series)
+# 4. Plausibility Check (Returns (DataFrame, int, avg) -> only extract the DataFrame)
 print("4. Plausibility Differences")
-series_diffs_df, _, _ = mt.plausibilitaetscheck_forderung_einigung(df)
-df_plausi_df = series_diffs_df.to_frame(name='differenz_eur').reset_index().rename(columns={'index': 'original_row_index'})
+df_plausi_df, _, _ = mt.plausibilitaetscheck_forderung_einigung(df)
 con.execute("CREATE OR REPLACE TABLE metric_plausibility_diffs_auftragsdaten AS SELECT * FROM df_plausi_df")
 
-series_diffs_df2, _, _ = mt.plausibilitaetscheck_forderung_einigung(df2)
-df_plausi_df2 = series_diffs_df2.to_frame(name='differenz_eur').reset_index().rename(columns={'index': 'original_row_index'})
+df_plausi_df2, _, _ = mt.plausibilitaetscheck_forderung_einigung(df2)
 con.execute("CREATE OR REPLACE TABLE metric_plausibility_diffs_positionsdaten AS SELECT * FROM df_plausi_df2")
 
 # 5. Data Cleanliness Grouped (Returns (Series, DataFrame))
@@ -295,10 +296,10 @@ con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM
 
 print("Calculating Extended Chart Data...")
 # page4 Tab 1
-plausi_outliers = mt.get_plausi_outliers(df)
-con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df1 AS SELECT * FROM plausi_outliers")
-plausi_outliers2 = mt.get_plausi_outliers_df2(df2)
-con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df2 AS SELECT * FROM plausi_outliers2")
+# plausi_outliers = mt.get_plausi_outliers(df)
+# con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df1 AS SELECT * FROM plausi_outliers")
+# plausi_outliers2 = mt.get_plausi_outliers_df2(df2)
+# con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df2 AS SELECT * FROM plausi_outliers2")
 
 # page4 Tab 2
 disc_stats, disc_details = mt.get_discount_details(df2)
@@ -318,7 +319,7 @@ con.execute("CREATE OR REPLACE TABLE metric_fn_details_df2 AS SELECT * FROM fn_d
 print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
 text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
-plausi_issues = plausibility_error_count + discount_logic_errors + proforma_count + false_negative_df + false_negative_df2
+plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + false_negative_df + false_negative_df2
 overall_issues = numeric_issues + text_issues + plausi_issues
 
 issues = {

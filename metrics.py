@@ -138,21 +138,28 @@ def plausibilitaetscheck_forderung_einigung(input_df):
         
         Returns
         -------        
-        statistik: pandas.Series
-            a list of all differences >0 as float values
+        results: pandas.DataFrame
+            a DataFrame of all differences > 0 as float values alongside their ID and Forderung_Netto and Einigung_Netto 
         count: int  
             total number of rows with difference >0
         avg: float
             average difference over all found instances    
     """
-    faulty_rows_mask = input_df['Einigung_Netto'].round(2) > input_df['Forderung_Netto'].round(2)
+    if 'AuftragID' in input_df.columns:
+        cols = ["KvaRechnung_ID", "Forderung_Netto", "Einigung_Netto"]
+    else:
+        cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
+
+    results = input_df[cols]
+    faulty_rows_mask = results['Einigung_Netto'].round(2) > results['Forderung_Netto'].round(2)
     #count amount of positives
     count = faulty_rows_mask.sum()
 
-    statistik = (input_df.loc[faulty_rows_mask, 'Einigung_Netto']-input_df.loc[faulty_rows_mask,'Forderung_Netto']).round(2)
-    avg = statistik.mean()
+    results['Diff'] = (results.loc[faulty_rows_mask, 'Einigung_Netto']-results.loc[faulty_rows_mask,'Forderung_Netto']).round(2)
+    results = results[results['Diff'] > 0]
+    avg = results['Diff'].mean()
 
-    return statistik, count, avg
+    return results, count, avg
 
 
 def uniqueness_check(df, df2):
@@ -975,66 +982,54 @@ def get_discount_details(df2):
     return stats_df, details_df
 
 
-def get_plausi_outliers(df):
-    """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Auftragsdaten'.
+# def get_plausi_outliers(df):
+#     """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Auftragsdaten'.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
+#     Parameters
+#     ----------
+#     df : pandas.DataFrame
+#         DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
 
-    Returns
-    -------
-    top_outliers: pandas.DataFrame
-        DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
-    """
-    cols = ["KvaRechnung_ID", "Forderung_Netto", "Einigung_Netto"]
-    df_res = df[cols].copy()
+#     Returns
+#     -------
+#     top_outliers: pandas.DataFrame
+#         DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
+#     """
+#     cols = ["KvaRechnung_ID", "Forderung_Netto", "Einigung_Netto"]
+#     df_res = df[cols].copy()
 
-    df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
+#     df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
 
-    df_res = df_res[df_res["Diff"] > 0]
+#     df_res = df_res[df_res["Diff"] > 0]
 
-    outliers = df_res.sort_values(by="Diff", ascending=False)
-    return outliers
+#     outliers = df_res.sort_values(by="Diff", ascending=False)
+#     return outliers
 
 
-def get_plausi_outliers_df2(df2):
-    """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Positionsdaten'.
+# def get_plausi_outliers_df2(df2):
+#     """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Positionsdaten'.
 
-    Parameters
-    ----------
-    df2 : pandas.DataFrame
-        DataFrame containing 'Positionsdaten' data set that is to be evaluated.
+#     Parameters
+#     ----------
+#     df2 : pandas.DataFrame
+#         DataFrame containing 'Positionsdaten' data set that is to be evaluated.
 
-    Returns
-    -------
-    top_outliers: pandas.DataFrame
-        DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
-    """
-    cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
+#     Returns
+#     -------
+#     top_outliers: pandas.DataFrame
+#         DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
+#     """
+#     cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
 
-    df_res = df2[cols].copy()
+#     df_res = df2[cols].copy()
 
-    df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
-    df_res = df_res[df_res["Diff"] > 0]
+#     df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
+#     df_res = df_res[df_res["Diff"] > 0]
 
-    outliers = df_res.sort_values(by="Diff", ascending=False)
-    return outliers
+#     outliers = df_res.sort_values(by="Diff", ascending=False)
+#     return outliers
 
 if __name__ == "__main__":
     df, df2 = load_data()
 
-    start_time = time.time()
-    result = get_mismatched_entries(df)
-    print(result.columns)
-    end_time = time.time()
-    print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
-
-    # Ausgabe
-    print(f"\nGefundene Unstimmigkeiten: {len(result)}")
-    print("-" * 50)
-    if not result.empty:
-        print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
-    else:
-        print("Alles scheint zu passen!")
+    print(plausibilitaetscheck_forderung_einigung(df2))

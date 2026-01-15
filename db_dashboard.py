@@ -36,7 +36,6 @@ def compute_metrics_df1():
     statistiken_num = stats_df.set_index('column_name').T.to_dict()
 
     plausi_df = con.execute("SELECT * FROM metric_plausibility_diffs_auftragsdaten").df()
-    plausi_diff_list = plausi_df['differenz_eur']
 
     grouped_col_ratios_df1 = con.execute("SELECT * FROM metric_cleanliness_cols_grouped_auftragsdaten").df()
     
@@ -55,7 +54,6 @@ def compute_metrics_df1():
 
     fn_stats_df1 = con.execute("SELECT * FROM metric_fn_stats_df1").df()
     fn_details_df1 = con.execute("SELECT * FROM metric_fn_details_df1").df()
-    plausi_outliers = con.execute("SELECT * FROM metric_plausi_outliers_df1").df()
 
     semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
@@ -67,9 +65,9 @@ def compute_metrics_df1():
         "test_kundengruppen_anzahl": scalars['count_test_data_rows'],
         "test_data_df": test_data_df,
         "statistiken_num": statistiken_num,
-        "plausi_forderung_einigung_list": plausi_diff_list,
-        "plausi_forderung_einigung_count": scalars['count_plausibility_errors'],
-        "plausi_forderung_einigung_avg_diff": scalars['avg_plausibility_diff'],
+        "plausi_forderung_einigung_df": plausi_df,
+        "plausi_forderung_einigung_count": scalars['count_plausibility_errors_df'],
+        "plausi_forderung_einigung_avg_diff": scalars['avg_plausibility_diff_df'],
         "grouped_col_ratios": grouped_col_ratios_df1,
         "grouped_row_ratios": grouped_row_ratios_df1,
         "proforma_belege_df": proforma_df,
@@ -82,7 +80,6 @@ def compute_metrics_df1():
         "handwerker_gewerke_outlier": handwerker_outliers,
         "false_negative_stats": fn_stats_df1,
         "false_negative_details": fn_details_df1,
-        "plausi_outliers": plausi_outliers,
         "empty_orders_count": scalars['count_empty_orders'],
         "mismatched_entries": semantic_mismatches
     }
@@ -103,7 +100,6 @@ def compute_metrics_df2():
     statistiken_num = stats_df2.set_index('column_name').T.to_dict()
     
     plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
-    plausi_diff_list = plausi_df2['differenz_eur']
 
     position_counts_df = con.execute("""
         SELECT KvaRechnung_ID, COUNT(Position_ID) as PositionsAnzahl 
@@ -111,7 +107,6 @@ def compute_metrics_df2():
         GROUP BY KvaRechnung_ID
     """).df()
 
-    plausi_outliers2 = con.execute("SELECT * FROM metric_plausi_outliers_df2").df()
     fn_stats_df2 = con.execute("SELECT * FROM metric_fn_stats_df2").df()
     fn_details_df2 = con.execute("SELECT * FROM metric_fn_details_df2").df()
     disc_stats = con.execute("SELECT * FROM metric_discount_stats").df()
@@ -126,15 +121,14 @@ def compute_metrics_df2():
         "statistiken_num": statistiken_num,
         "discount_check_errors": scalars['count_discount_logic_errors'],
         "position_counts_per_rechnung": position_counts_df,
-        "plausi_forderung_einigung_list": plausi_diff_list,
-        "plausi_forderung_einigung_count": plausi_diff_list.size, 
-        "plausi_forderung_einigung_avg_diff": plausi_diff_list.mean() if not plausi_diff_list.empty else 0,
+        "plausi_forderung_einigung_count": scalars["count_plausibility_errors_df2"], 
+        "plausi_forderung_einigung_avg_diff": scalars["avg_plausibility_diff_df2"],
         "false_negative": scalars['count_false_negative_df2'],
         "false_negative_stats": fn_stats_df2,
         "false_negative_details": fn_details_df2,
         "discount_stats": disc_stats,
         "discount_details": disc_details,
-        "plausi_outliers": plausi_outliers2
+        "plausi_forderung_einigung_df2": plausi_df2
     }
 
     print(f"Loaded metrics for df2 in {round(time.time() - start_time, 2)}s")
