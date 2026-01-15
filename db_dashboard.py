@@ -26,6 +26,7 @@ def compute_metrics_df1():
 
     con = get_db_connection()
     scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
+    print(type(scalars['count_total_orders']))
 
     null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
     
@@ -185,7 +186,7 @@ def compute_issues_df():
     print("Loading issues metrics from DB...")
     start_time = time.time()
     con = get_db_connection()
-    issues_df = con.execute("SELECT * FROM issues").df()
+    issues_df = con.execute("SELECT * FROM issues").df().iloc[0]
     print(f"Loaded issues metrics in {round(time.time() - start_time, 2)}s")
     return issues_df
 

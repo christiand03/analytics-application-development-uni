@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, issues_df=None):
+def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -20,16 +20,16 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     zeitwert_error_count = metrics_df1.get("zeitwert_errors_count", pd.NA)
     above_50k_df = metrics_df1.get("above_50k_df", pd.NA)
     above_50k_count = len(above_50k_df)
-
+    row_count = metrics_df1.get("row_count")
+    row_count_df2 = metrics_df2.get("row_count")
     auftraege_abgleich = metrics_combined.get("auftraege_abgleich")
+    numeric_issues = issues_df["numeric_issues"]
 
-    numeric_issues = issues_df["numeric_issues"] if issues_df is not None else 0
-
-    anteil_zeitwert = (zeitwert_error_count / metrics_df1.get("row_count", 1)) * 100 if metrics_df1.get("row_count", 0) > 0 else 0
-    anteil_above_50k = (above_50k_count / metrics_df1.get("row_count", 1)) * 100 if metrics_df1.get("row_count", 0) > 0 else 0
-    anteil_summe = (auftraege_abgleich.shape[0] / metrics_df1.get("row_count", 1)) * 100 if metrics_df1.get("row_count", 0) > 0 else 0
-    val = (numeric_issues / (metrics_df1.get("row_count", 1)+ metrics_df2.get("row_count", 1))) * 100
-    anteil_numeric_issues = float(val) if (metrics_df1.get("row_count", 0) + metrics_df2.get("row_count", 0)) > 0 else 0
+    anteil_zeitwert = (zeitwert_error_count / row_count) * 100 
+    anteil_above_50k = (above_50k_count / row_count) * 100 
+    anteil_summe = (auftraege_abgleich.shape[0] / row_count) * 100 
+    anteil_numeric_issues = (numeric_issues / (row_count + row_count_df2)) * 100
+    print(type(anteil_numeric_issues))
 
     # --- KPIs ---
     kpi_cols = st.columns(4)

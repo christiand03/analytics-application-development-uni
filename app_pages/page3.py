@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, issues_df=None):
+def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -21,16 +21,16 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     df_outlier = metrics_df1.get("handwerker_gewerke_outlier")
     test_data_df = metrics_df1.get("test_data_df", pd.DataFrame()) 
     
-    kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl", 0)
-    row_count = metrics_df1.get("row_count", 1) 
-    text_issues = issues_df["text_issues"] if issues_df is not None else 0
-    val = (text_issues / (metrics_df1.get("row_count", 1)+ metrics_df2.get("row_count", 1))) * 100
-    anteil_text_issues = float(val) if (metrics_df1.get("row_count", 0) + metrics_df2.get("row_count", 0)) > 0 else 0
-    anteil_testdaten = (kundengruppe_containing_test / row_count * 100) if row_count else 0
+    kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl")
+    row_count = metrics_df1.get("row_count") 
+    row_count_df2 = metrics_df2.get("row_count")
+    text_issues = issues_df["text_issues"]
+    anteil_text_issues = (text_issues / (row_count + row_count_df2)) * 100
+    anteil_testdaten = (kundengruppe_containing_test / row_count * 100)
 
     # outlier KPI
-    outlier_count = 0 if df_outlier is None else len(df_outlier[df_outlier['is_outlier'] == True])
-    outlier_share = (outlier_count / row_count * 100) if row_count else 0
+    outlier_count = len(df_outlier[df_outlier['is_outlier'] == True])
+    outlier_share = (outlier_count / row_count * 100)
 
     # KPI HEADER
     kpi_cols = st.columns(3)
@@ -68,7 +68,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     st.markdown("---")
 
     # ZEITVERLAUF DIAGRAMM (MIT RAW DATA VIEW)
-    st.subheader("Fehlerverlauf im Vergleich (Textuelle Daten)")
+    st.subheader("Fehlerverlauf im Vergleich:")
     st.caption("Dieses Diagramm zeigt den Verlauf der ausgewählten Fehlerkategorien über den gewählten Zeitraum. Aktuell können nur Testdatensätze visualisiert werden.")
 
     def prepare_trend_data(df, label, time_col="CRMEingangszeit"):
