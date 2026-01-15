@@ -883,7 +883,7 @@ def get_fn_df1_details(df):
     details_df = df.loc[full_mask, ["KvaRechnung_ID", "Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"]].copy()
     if not details_df.empty:
         details_df["Schwere"] = details_df[["Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"]].abs().max(axis=1)
-        details_df = details_df.sort_values("Schwere", ascending=False).head(500)
+        details_df = details_df.sort_values("Schwere", ascending=False)
 
     return stats_df, details_df
 
@@ -937,7 +937,7 @@ def get_fn_df2_details(df2):
             temp_df = df2.loc[mask_betrag]
 
         available_cols = [c for c in cols if c in temp_df.columns]
-        details_df = temp_df[available_cols].head(500)
+        details_df = temp_df[available_cols]
 
     return stats_df, details_df
 
@@ -968,7 +968,7 @@ def get_discount_details(df2):
         stats_df.columns = ["Bezeichnung", "Anzahl"]
 
     cols = ["Position_ID", "Bezeichnung", "Forderung_Netto", "Einigung_Netto", "ist_Abzug"]
-    details_df = df2.loc[mask_err, [c for c in cols if c in df2.columns]].head(500)
+    details_df = df2.loc[mask_err, [c for c in cols if c in df2.columns]]
 
     return stats_df, details_df
 
@@ -984,7 +984,7 @@ def get_plausi_outliers(df):
     Returns
     -------
     top_outliers: pandas.DataFrame
-        DataFrame containing the top 50 entries with the highest positive difference (Einigung - Forderung).
+        DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
     """
     cols = ["KvaRechnung_ID", "Forderung_Netto", "Einigung_Netto"]
     df_res = df[cols].copy()
@@ -993,8 +993,8 @@ def get_plausi_outliers(df):
 
     df_res = df_res[df_res["Diff"] > 0]
 
-    top_outliers = df_res.nlargest(50, "Diff")
-    return top_outliers
+    outliers = df_res.sort_values(by="Diff", ascending=False)
+    return outliers
 
 
 def get_plausi_outliers_df2(df2):
@@ -1008,7 +1008,7 @@ def get_plausi_outliers_df2(df2):
     Returns
     -------
     top_outliers: pandas.DataFrame
-        DataFrame containing the top 50 entries with the highest positive difference (Einigung - Forderung).
+        DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
     """
     cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
 
@@ -1017,8 +1017,8 @@ def get_plausi_outliers_df2(df2):
     df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
     df_res = df_res[df_res["Diff"] > 0]
 
-    return df_res.nlargest(50, "Diff")
-
+    outliers = df_res.sort_values(by="Diff", ascending=False)
+    return outliers
 
 if __name__ == "__main__":
     df, df2 = load_data()
