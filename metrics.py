@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import re
+import time
 from sentence_transformers import SentenceTransformer
 import torch
 
@@ -616,6 +617,7 @@ def get_mismatched_entries(df, threshold=0.2, process_batch_size=16384, encode_b
     
     model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=device)
 
+    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
     gewerk_codes, unique_gewerke = pd.factorize(df['Gewerk_Name'])
     handwerker_codes, unique_handwerker = pd.factorize(df['Handwerker_Name'])
 
@@ -1022,3 +1024,17 @@ def get_plausi_outliers_df2(df2):
 
 if __name__ == "__main__":
     df, df2 = load_data()
+
+    start_time = time.time()
+    result = get_mismatched_entries(df)
+    print(result.columns)
+    end_time = time.time()
+    print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
+
+    # Ausgabe
+    print(f"\nGefundene Unstimmigkeiten: {len(result)}")
+    print("-" * 50)
+    if not result.empty:
+        print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
+    else:
+        print("Alles scheint zu passen!")
