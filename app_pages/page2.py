@@ -35,16 +35,16 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     kpi_cols = st.columns(4)
     with kpi_cols[0]: 
         st.metric(label="Numerische Auffälligkeiten", value=f"{numeric_issues:,}".replace(",", "."), delta=get_delta("numeric_issues"), delta_color="inverse", help="Numerische Fehler und Warnings im Datensatz")
-        st.caption(f"Anteil: {anteil_numeric_issues:.2f}% relevanter Datensätze (beide Datensätze)")
+        st.caption(f"Anteil: {anteil_numeric_issues:.2f}% an beiden Datensätzen")
     with kpi_cols[1]: 
-        st.metric(label="Fehleranzahl Zeitwerte", value=f"{zeitwert_error_count:,}".replace(",", "."), delta=get_delta("count_zeitwert_errors"), delta_color="inverse", help="Anzahl der Fehler in Zeitwertspalte")
-        st.caption(f"Anteil: {anteil_zeitwert:.2f}% relevanter Datensätze (Auftragsdaten)")
+        st.metric(label="Fehleranzahl Zeitwerte", value=f"{zeitwert_error_count:,}".replace(",", "."), delta=get_delta("count_zeitwert_errors"), delta_color="inverse", help="Anzahl der Fehler in der Zeitwertspalte")
+        st.caption(f"Anteil: {anteil_zeitwert:.2f}% der Auftragsdaten")
     with kpi_cols[2]: 
         st.metric(label="Anzahl Aufträge über 50.000€", value=f"{above_50k_count:,}".replace(",", "."), delta=get_delta("count_above_50k"), delta_color="inverse", help="Anzahl der Aufträge mit einem Wert über 50.000€")
-        st.caption(f"Anteil: {anteil_above_50k:.2f}% relevanter Datensätze (Auftragsdaten)")
+        st.caption(f"Anteil: {anteil_above_50k:.2f}% der Auftragsdaten")
     with kpi_cols[3]: 
         st.metric(label="Abweichung Summen", value=f"{auftraege_abgleich.shape[0] if auftraege_abgleich is not None else 0:,}".replace(",", "."), delta=get_delta("count_abweichung_summen"), delta_color="inverse", help="Anzahl der Aufträge mit Abweichungen in den Summen (Auftragssumme = Summe der Positionen)")
-        st.caption(f"Anteil: {anteil_summe:.2f}% relevanter Datensätze (Auftragsdaten)")
+        st.caption(f"Anteil: {anteil_summe:.2f}% der Auftragsdaten")
     st.markdown("---")
 
     st.subheader("Fehlerverlauf im Vergleich")
@@ -134,6 +134,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     with chart_col1:
         st.subheader("Die inkorrekten Zeitwerte:")
         st.caption("Auflistung aller Aufträge mit inkorrekten Zeitwerten in der Zeitwert-Spalte.")
+        st.markdown(f"**Gefundene Einträge: {len(zeitwert_error_df)}**")
         st.dataframe(zeitwert_error_df)
         csv_zeitwert = zeitwert_error_df.to_csv(index=False).encode('utf-8')
 
@@ -148,6 +149,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     with chart_col2:
         st.subheader("Abweichungen Auftragssumme vs. Positionssummen:")
         st.caption("Auflistung aller Aufträge, bei denen die Auftragssumme nicht mit der Summe der Positionen übereinstimmt.")
+        st.markdown(f"**Gefundene Einträge: {len(auftraege_abgleich)}**")
         st.dataframe(auftraege_abgleich)
         csv_abweichungen = auftraege_abgleich.to_csv(index=False).encode('utf-8')
         st.download_button(
@@ -159,6 +161,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
 
     st.subheader("Aufträge über 50.000€:")
     st.caption("Auflistung aller Aufträge mit einem Wert über 50.000€.")
+    st.markdown(f"**Gefundene Einträge: {len(above_50k_df)}**")
     st.dataframe(above_50k_df)
     csv_above_50k = above_50k_df.to_csv(index=False).encode('utf-8')
 

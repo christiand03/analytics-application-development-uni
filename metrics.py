@@ -925,7 +925,7 @@ def get_fn_df2_details(df2):
 
     details_df = pd.DataFrame()
     if mask_betrag.any():
-        cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto", "Bezeichnung"]
+        cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto", "Menge", "Bezeichnung"]
 
         if "Position_ID" not in df2.columns:
             temp_df = df2.loc[mask_betrag].copy()

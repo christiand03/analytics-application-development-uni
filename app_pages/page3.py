@@ -37,31 +37,31 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     with kpi_cols[0]:
         st.metric(
             label="Textuelle Auffälligkeiten",
-            value=text_issues,
+            value=f"{text_issues:,}".replace(",", "."),
             delta=get_delta("text_issues"), 
             delta_color="inverse",
             help="Textuelle Fehler und Warnings im Datensatz"
         )
-        st.caption(f"Anteil: {anteil_text_issues:.2f}% relevanter Datensätze (beide Datensätze)")
+        st.caption(f"Anteil: {anteil_text_issues:.2f}% an beiden Datensätzen")
     with kpi_cols[1]: 
         st.metric(
             label="Testdatensätze in Kundengruppe",
-            value=f"{kundengruppe_containing_test}",
+            value=f"{kundengruppe_containing_test:,}".replace(",", "."),
             delta=get_delta("count_test_data_rows"), 
             delta_color="inverse",
             help="Anzahl der Aufträge, die als Testdatensätze identifiziert wurden"
         )
-        st.caption(f"Anteil: {anteil_testdaten:.2f}% relevanter Datensätze (Auftragsdaten)")
+        st.caption(f"Anteil: {anteil_testdaten:.2f}% der Auftragsdaten")
 
     with kpi_cols[2]:
         st.metric(
             label="Auffällige Gewerk-Zuordnungen",
-            value=str(outlier_count),
+            value=f"{outlier_count:,}".replace(",", "."),
             delta=get_delta("count_handwerker_outliers"), 
             delta_color="inverse",
             help="Anzahl der Aufträge mit auffälligen Handwerker-Gewerk Zuordnungen"
         )
-        st.caption(f"Anteil: {outlier_share:.2f}% relevanter Datensätze (Auftragsdaten)")
+        st.caption(f"Anteil: {outlier_share:.2f}% der Auftragsdaten")
     
 
 
@@ -122,7 +122,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
         # View Toggle
         view_mode_trend = st.radio(
             "Ansicht (Zeitverlauf):",
-            ["Grafische Auswertung", "Detail-Tabelle (Rohdaten)"],
+            ["Grafische Auswertung", "Detail-Tabelle"],
             horizontal=True,
             label_visibility="collapsed",
             key="p3_trend_view_toggle"
@@ -263,6 +263,8 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
             }
 
             cols_to_show = [c for c in rename_map.keys() if c in df_display.columns]
+
+            st.markdown(f"**Gefundene Einträge: {len(df_display)}**")
 
             st.dataframe(
                 df_display[cols_to_show].rename(columns=rename_map),

@@ -56,12 +56,12 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
             value=f"{plausi_issue:,}".replace(",", "."),
             delta=get_delta("plausi_issues"),
             delta_color="inverse",
-            help="Anzahl der Plausibilitätsfehler im Datensatz"
+            help="Textuelle Fehler und Warnings im Datensatz"
         )
-        st.caption(f"Anteil: {anteil_plausi_issues:.2f}% relevanter Datensätze (beide Datensätze)")
+        st.caption(f"Anteil: {anteil_plausi_issues:.2f}% an beiden Datensätzen")
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Logik: Forderung < Einigung",
+        "Logikfehler: Forderung < Einigung",
         "Rabatt/Vorzeichen",
         "Proforma-Belege",
         "Validierung der Vorzeichenlogik (Auftrag)",
@@ -69,7 +69,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     ])
 
     with tab1:
-        st.subheader("Forderung < Einigung")
+        st.subheader("Logikfehler: Forderung < Einigung")
         st.caption("Fälle, in denen Forderung_Netto kleiner als Einigung_Netto ist")
 
         dataset_choice = st.radio("Datensatz wählen", ["Auftragsdaten (df1)", "Positionsdaten (df2)"], horizontal=True)
@@ -112,7 +112,8 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
                 hist_data = pd.DataFrame({"Diff": diff_list})
                 # Filter für bessere Ansicht im Histogramm (bis P95)
                 hist = alt.Chart(hist_data[hist_data["Diff"] <= (p95 * 1.5 if p95 > 0 else 100)]).mark_bar().encode(
-                    x=alt.X("Diff:Q", bin=True, title="Differenz"), y="count()"
+                    x=alt.X("Diff:Q", bin=True, title="Differenz"), 
+                    y=alt.Y("count()", title="Anzahl"),
                 ).properties(height=300, title="Verteilung")
                 st.altair_chart(hist, width="stretch")
             else:
@@ -137,6 +138,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
         st.markdown("---")
         if not outliers_view.empty:
             with st.expander(f"Details anzeigen ({dataset_choice})"):
+                st.markdown(f"**Gefundene Einträge: {len(outliers_view)}**")
                 st.dataframe(outliers_view, width="stretch")
 
                 csv_plausi = outliers_view.to_csv(index=False).encode('utf-8')
@@ -152,7 +154,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
     with tab2:
         st.subheader("Rabatt-Logik & Vorzeichen")
-        st.caption("Fälle, in denen Rabatte unplausibel sind (z.B. Rabatt > Nettopreis)")
+        st.caption("Fälle, in denen Rabatte unplausibel sind. (Rabatte werden anhand von Keywords erkannt) Vorzeichen-Checks nur bei Einigung_netto.")
         c1, c2 = st.columns(2)
         c1.metric("Unplausible Positionen", value=f"{discount_errors:,}".replace(",", "."), delta=get_delta("count_discount_logic_errors"), delta_color="inverse", help="Anzahl der Positionen mit unplausiblen Rabatten")
 
@@ -168,6 +170,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
         if not disc_details.empty:
             with st.expander("Details anzeigen"):
+                st.markdown(f"**Gefundene Einträge: {len(disc_details)}**")
                 st.dataframe(disc_details, width="stretch")
 
                 csv_disc = disc_details.to_csv(index=False).encode('utf-8')
@@ -181,7 +184,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
     with tab3:
             st.subheader("Erkannte Proforma-Belege")
-            st.caption("Aufträge, die als Proforma-Belege identifiziert wurden. (Performa-Beleg = Aufträge mit Einigung_Netto zwischen 0,01 und 1 €)")
+            st.caption("Aufträge, die als Proforma-Belege identifiziert wurden. (Performa-Beleg = Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.)")
             c1, c2 = st.columns(2)
             c1.metric("Anzahl Belege", value=f"{proforma_count:,}".replace(",", "."), delta=get_delta("count_proforma_receipts"), delta_color="inverse", help="Anzahl der als Proforma-Belege identifizierten Aufträge")
             c2.metric("Anteil an Aufträgen", f"{(proforma_count / total_df1) * 100:.2f}%" if total_df1 else "NA", help="Prozentualer Anteil der Proforma-Belege am gesamten Auftragsdatensatz")
@@ -195,6 +198,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
                     st.altair_chart(line, width="stretch")
 
                 with st.expander("Details anzeigen"):
+                    st.markdown(f"**Gefundene Einträge: {len(proforma_df)}**")
                     st.dataframe(proforma_df, width="stretch")
                     csv_proforma = proforma_df.to_csv(index=False).encode('utf-8')
 
@@ -207,7 +211,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
     with tab4:
         st.subheader("Validierung der Vorzeichenlogik in Auftragsdaten")
-        st.caption("Aufträge mit inkonsistenten Vorzeichen bei Forderung, Einigung und Auftragssumme")
+        st.caption("Aufträge mit inkonsistenten Vorzeichen bei Forderung, Empfehlung und Einigung.")
         c1, c2, c3 = st.columns(3)
         c1.metric("Fehlerhafte Aufträge", value=f"{fn_count_df1:,}".replace(",", "."), delta=get_delta("count_false_negative_df"), delta_color="inverse", help="Anzahl der Aufträge mit inkonsistenten Vorzeichen bei Forderung, Einigung und Auftragssumme")
         c2.metric("Anteil an Aufträgen", f"{(fn_count_df1 / total_df1) * 100:.2f}%" if total_df1 else "NA", help="Prozentualer Anteil der fehlerhaften Aufträge am gesamten Auftragsdatensatz")
@@ -223,6 +227,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
         if not fn_details_df1.empty:
             with st.expander("Details anzeigen"):
+                st.markdown(f"**Gefundene Einträge: {len(fn_details_df1)}**")
                 st.dataframe(fn_details_df1, width="stretch")
                 csv_data = fn_details_df1.to_csv(index=False).encode('utf-8')
 
@@ -233,11 +238,9 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
                     mime="text/csv",
                 )
 
-                
-
     with tab5:
         st.subheader("Validierung der Vorzeichenlogik in Positionsdaten")
-        st.caption("Positionen mit inkonsistenten Vorzeichen bei Forderung, Einigung und Positionssumme")
+        st.caption("Positionen mit inkonsistenten Vorzeichen bei Forderung, Einigung, Positionssumme und Menge.")
         c1, c2, c3 = st.columns(3)
         c1.metric("Inkonsistente Positionen", value=f"{fn_count_df2:,}".replace(",", "."), delta=get_delta("count_false_negative_df2"), delta_color="inverse", help="Anzahl der Positionen mit inkonsistenten Vorzeichen bei Forderung, Einigung und Positionssumme")
         c2.metric("Anteil an Positionen", f"{(fn_count_df2 / total_df2) * 100:.2f}%" if total_df2 else "NA", help="Prozentualer Anteil der fehlerhaften Positionen am gesamten Positionsdatensatz")
@@ -253,6 +256,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
         if not fn_details_df2.empty:
             with st.expander("Details anzeigen"):
+                st.markdown(f"**Gefundene Einträge: {len(fn_details_df2)}**")
                 st.dataframe(fn_details_df2, width="stretch")
                 csv_data_2 = fn_details_df2.to_csv(index=False).encode('utf-8')
 
@@ -262,7 +266,5 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
                     file_name="konsistenz_fehler_details.csv",
                     mime="text/csv",
                 )
-
-                
 
     st.markdown("---")
