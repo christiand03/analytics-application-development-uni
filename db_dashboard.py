@@ -64,6 +64,7 @@ def compute_metrics_df1():
         "null_ratio_cols": null_ratios_cols,
         "null_ratio_rows": scalars['null_row_ratio_orders'],
         "test_kundengruppen_anzahl": scalars['count_test_data_rows'],
+        "test_data_df": test_data_df,
         "statistiken_num": statistiken_num,
         "plausi_forderung_einigung_list": plausi_diff_list,
         "plausi_forderung_einigung_count": scalars['count_plausibility_errors'],
@@ -179,6 +180,14 @@ def compute_comparison_metrics():
     print(f"Loaded comparison metrics in {round(time.time() - start_time, 2)}s")
     return comparison_df
 
+@st.cache_data
+def compute_issues_df():
+    print("Loading issues metrics from DB...")
+    start_time = time.time()
+    con = get_db_connection()
+    issues_df = con.execute("SELECT * FROM issues").df()
+    print(f"Loaded issues metrics in {round(time.time() - start_time, 2)}s")
+    return issues_df
 
 # CSS
 st.markdown("""
@@ -266,27 +275,28 @@ metrics_df1 = compute_metrics_df1()
 metrics_df2 = compute_metrics_df2()
 metrics_combined = compute_metrics_combined()
 comparison_df = compute_comparison_metrics()
+issues_df = compute_issues_df()
 print(f"Global data loaded in {round(time.time() - start_global, 2)}s")
 
 if selected == "Startseite":
     start = time.time()
     pos_time = compute_positions_over_time()
-    page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time, comparison_df)
+    page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time, comparison_df, issues_df)
     print("page 1 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Numerische Daten":
     start = time.time()
-    page2.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
+    page2.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df)
     print("page 2 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Textuelle Daten":
     start = time.time()
-    page3.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
+    page3.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
     start = time.time()
-    page4.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
+    page4.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Data Drift":

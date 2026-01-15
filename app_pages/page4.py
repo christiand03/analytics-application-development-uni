@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
+def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, issues_df=None):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -45,14 +45,25 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
     total_df1 = metrics_df1.get("row_count", 0)
     total_df2 = metrics_df2.get("row_count", 0)
 
+    plausi_issue = issues_df["plausi_issues"] if issues_df is not None else 0
+
+
     st.markdown("### Plausibilitäts-Checks & Logikfehler")
+    kpi_cols = st.columns(1)
+    with kpi_cols[0]:
+        st.metric(
+            label="Plausibilitäts-Auffälligkeiten",
+            value=plausi_issue,
+            delta=get_delta("plausi_issues"),
+            delta_color="inverse"
+        )
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Einigung > Forderung",
         "Rabatt/Vorzeichen",
         "Proforma-Belege",
         "Tripel-Vorzeichen (Auftrag)",
-        "Konsistenz (Positionen)"
+        "Konsistenz (Positionen)",
     ])
 
     with tab1:

@@ -323,7 +323,8 @@ issues = {
     'plausi_issues': [plausi_issues],
     'overall_issues': [overall_issues],
     'count_zeitwert_errors': [len(zeitwert)],
-    'count_above_50k': [len(df_above_50k)]
+    'count_above_50k': [len(df_above_50k)],
+    'count_handwerker_outliers': [len(df_outliers_true)],
 }
 
 df_issues = pd.DataFrame(issues)

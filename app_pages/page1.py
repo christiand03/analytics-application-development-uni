@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df = None):
+def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df = None, issues_df = None):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -18,7 +18,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
     
 
     # --- KPI-BEREICH (6 Kacheln) ---
-    kpi_cols = st.columns(7)
+    kpi_cols = st.columns(8)
 
     row_count_df1 = metrics_df1.get("row_count", pd.NA)
     row_count_df2 = metrics_df2.get("row_count", pd.NA)
@@ -30,17 +30,29 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
     kva_unique = metrics_combined.get("kvarechnung_id_is_unique", None)
     pos_unique = metrics_combined.get("position_id_is_unique", None)
 
+    total_issues = issues_df["overall_issues"] if issues_df is not None else 0
+
     with kpi_cols[0]:
-        st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("count_total_orders"), delta_color="off")
+        st.metric(label="Auffälligkeiten", value=total_issues, help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("overall_issues"), delta_color="inverse")
     with kpi_cols[1]:
-        st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."), help="Anzahl Zeilen in Positionsdaten (df2).", delta=get_delta("count_total_positions"), delta_color="off")
+        st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("count_total_orders"), delta_color="off")
     with kpi_cols[2]:
-        st.metric(label="Fehlerquoten (df) [%]", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df.", delta=get_delta("null_row_ratio_orders"), delta_color="inverse")
+        st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."), help="Anzahl Zeilen in Positionsdaten (df2).", delta=get_delta("count_total_positions"), delta_color="off")
     with kpi_cols[3]:
-        st.metric(label="Fehlerquoten (df2) [%]", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df2.", delta=get_delta("null_row_ratio_positions"), delta_color="inverse")
+        st.metric(label="Fehlerquoten (df) [%]", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df.", delta=get_delta("null_row_ratio_orders"), delta_color="inverse")
     with kpi_cols[4]:
-        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
+        st.metric(label="Fehlerquoten (df2) [%]", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df2.", delta=get_delta("null_row_ratio_positions"), delta_color="inverse")
     with kpi_cols[5]:
+        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
+    with kpi_cols[6]:
+        st.metric(
+            label="Aufträge ohne Pos.",
+            value=f"{empty_orders:,}".replace(",", "."),
+            help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer).",
+            delta=get_delta("count_empty_orders"),
+            delta_color="inverse"
+        )
+    with kpi_cols[7]:
         uniq_text = (
             "OK" if (kva_unique is True and pos_unique is True) else
             ("KVA ok, Pos. nicht" if (kva_unique is True and pos_unique is False) else
@@ -51,14 +63,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
 
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 
-    with kpi_cols[6]:
-        st.metric(
-            label="Aufträge ohne Pos.",
-            value=f"{empty_orders:,}".replace(",", "."),
-            help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer).",
-            delta=get_delta("count_empty_orders"),
-            delta_color="inverse"
-        )
+
     # CHART-BEREICH
     chart_col1, chart_col2 = st.columns(2)
 

@@ -1,8 +1,8 @@
 import streamlit as st
+import pandas as pd
 import altair as alt
 
-
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
+def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, issues_df=None):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -17,49 +17,196 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
         return None
 
 
+    # DATEN LADEN
     df_outlier = metrics_df1.get("handwerker_gewerke_outlier")
-    # mismatched_entries = metrics_df1.get("mismatched_entries")
-    kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl")
-    row_count = metrics_df1.get("row_count")
-    anteil = kundengruppe_containing_test / row_count * 100
+    test_data_df = metrics_df1.get("test_data_df", pd.DataFrame()) 
+    
+    kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl", 0)
+    row_count = metrics_df1.get("row_count", 1) 
+    text_issues = issues_df["text_issues"] if issues_df is not None else 0
+    # Berechnung Anteile
+    anteil = (kundengruppe_containing_test / row_count * 100) if row_count else 0
 
     # outlier KPI
     outlier_count = 0 if df_outlier is None else len(df_outlier[df_outlier['is_outlier'] == True])
-    outlier_share = outlier_count / row_count * 100
+    outlier_share = (outlier_count / row_count * 100) if row_count else 0
 
-    kpi_cols = st.columns(2)
-    with kpi_cols[0]: st.metric(
-        label="Testdatensätze in Kundengruppe",
-        value=f"{kundengruppe_containing_test}",
-        delta=f"{anteil:.2f}% der Datensätze",
-        delta_color="inverse"
-    )
+    # KPI HEADER
+    kpi_cols = st.columns(3)
+    with kpi_cols[0]:
+        st.metric(
+            label="Textuelle Auffälligkeiten",
+            value=text_issues,
+            delta=get_delta("text_issues"), 
+            delta_color="inverse"
+        )
+    with kpi_cols[1]: 
+        st.metric(
+            label="Testdatensätze in Kundengruppe",
+            value=f"{kundengruppe_containing_test}",
+            delta=get_delta("count_test_data_rows"), 
+            delta_color="inverse"
+        )
+        st.caption(f"Anteil: {anteil:.2f}% aller Datensätze")
 
-    with kpi_cols[1]:
+    with kpi_cols[2]:
         st.metric(
             label="Auffällige Gewerk-Zuordnungen",
             value=str(outlier_count),
-            delta=f"{outlier_share:.2f}% der Datensätze",
+            delta=get_delta("count_handwerker_outliers"), 
             delta_color="inverse"
         )
+        st.caption(f"Anteil: {outlier_share:.2f}% aller Datensätze")
+    
+
 
     st.markdown("---")
 
-    #st.subheader("Semantische Prüfung (KI-Modell)")
+    # ZEITVERLAUF DIAGRAMM (MIT RAW DATA VIEW)
+    st.subheader("Fehlerverlauf im Vergleich (Textuelle Daten)")
 
+    def prepare_trend_data(df, label, time_col="CRMEingangszeit"):
+        """Bereitet DataFrame für das Zeitreihendiagramm (Aggregation) vor."""
+        if df is None or df.empty or time_col not in df.columns:
+            return pd.DataFrame()
+        
+        temp = df.copy()
+        temp[time_col] = pd.to_datetime(temp[time_col], errors="coerce")
+        temp = temp.dropna(subset=[time_col])
+        
+        temp["Monat"] = temp[time_col].dt.to_period("M").dt.to_timestamp()
+        
+        aggregated = temp.groupby("Monat").size().reset_index(name="Anzahl")
+        aggregated["Kategorie"] = label
+        return aggregated
+
+    # Daten für Chart vorbereiten (Aggregiert)
+    df_trend_test = prepare_trend_data(test_data_df, "Testdatensätze")
+    
+    combined_trend = pd.concat([df_trend_test], ignore_index=True)
+
+    if not combined_trend.empty:
+        min_date = combined_trend["Monat"].min().date()
+        max_date = combined_trend["Monat"].max().date()
+        all_kategorien = combined_trend["Kategorie"].unique()
+
+        col_ctrl1, col_ctrl2 = st.columns([1, 1])
+
+        with col_ctrl1:
+            if min_date != max_date:
+                selected_range = st.slider(
+                    "Zeitraum eingrenzen:",
+                    min_value=min_date,
+                    max_value=max_date,
+                    value=(min_date, max_date),
+                    format="MMM YYYY",
+                    key="p3_trend_slider"
+                )
+            else:
+                selected_range = (min_date, max_date)
+
+        with col_ctrl2:
+            selected_metrics = st.multiselect(
+                "Metriken auswählen:",
+                options=all_kategorien,
+                default=all_kategorien,
+                key="p3_trend_multiselect"
+            )
+
+        # View Toggle
+        view_mode_trend = st.radio(
+            "Ansicht (Zeitverlauf):",
+            ["Grafische Auswertung", "Detail-Tabelle (Rohdaten)"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="p3_trend_view_toggle"
+        )
+        
+        if view_mode_trend == "Grafische Auswertung":
+            mask_date = (combined_trend["Monat"].dt.date >= selected_range[0]) & (combined_trend["Monat"].dt.date <= selected_range[1])
+            mask_cat = combined_trend["Kategorie"].isin(selected_metrics)
+            
+            chart_data = combined_trend.loc[mask_date & mask_cat]
+
+            if not chart_data.empty:
+                line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
+                    x=alt.X("Monat:T", title="Monat", axis=alt.Axis(format="%b %Y")),
+                    y=alt.Y("Anzahl:Q", title="Anzahl Vorfälle"),
+                    color=alt.Color("Kategorie:N", title="Metrik", scale=alt.Scale(scheme="category10")),
+                    tooltip=[
+                        alt.Tooltip("Monat:T", format="%B %Y"),
+                        alt.Tooltip("Kategorie:N"),
+                        alt.Tooltip("Anzahl:Q")
+                    ]
+                ).properties(
+                    height=350,
+                    width="container"
+                ).interactive()
+
+                st.altair_chart(line_chart, width="stretch")
+            else:
+                st.warning("Keine Chart-Daten für die aktuelle Auswahl verfügbar.")
+        
+        else:
+            
+            raw_frames = []
+
+            if "Testdatensätze" in selected_metrics and not test_data_df.empty:
+                temp_raw = test_data_df.copy()
+                
+                temp_col = "CRMEingangszeit"
+                if temp_col in temp_raw.columns:
+                    temp_raw[temp_col] = pd.to_datetime(temp_raw[temp_col], errors="coerce")
+                    
+                    mask_raw = (temp_raw[temp_col].dt.date >= selected_range[0]) & \
+                               (temp_raw[temp_col].dt.date <= selected_range[1])
+                    
+                    filtered_raw = temp_raw.loc[mask_raw].copy()
+                    
+                    filtered_raw.insert(0, "Fehlerkategorie", "Testdatensatz")
+                    
+                    raw_frames.append(filtered_raw)
+
+            if raw_frames:
+                final_raw_df = pd.concat(raw_frames, ignore_index=True)
+                
+                st.markdown(f"**Gefundene Einträge: {len(final_raw_df)}** im Zeitraum {selected_range[0].strftime('%d.%m.%Y')} bis {selected_range[1].strftime('%d.%m.%Y')}")
+                
+                st.dataframe(
+                    final_raw_df, 
+                    width="stretch", 
+                    hide_index=True
+                )
+
+                csv_raw = final_raw_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Rohdaten als CSV herunterladen",
+                    data=csv_raw,
+                    file_name="zeitverlauf_rohdaten_text.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.info("Keine Rohdaten für die gewählten Metriken im ausgewählten Zeitraum gefunden.")
+
+    else:
+        st.info("Nicht genügend Zeitdaten für ein Verlaufsdiagramm vorhanden.")
+
+    st.markdown("---")
+
+    # DETAIL ANALYSE (OUTLIERS)
     st.subheader("Statistische Auffälligkeiten (Handwerker vs. Gewerk)")
 
     if df_outlier is not None and not df_outlier.empty:
 
-        # Toggle für Ansicht
-        view_mode = st.radio(
-            "Darstellung:",
+        view_mode_outlier = st.radio(
+            "Darstellung (Auffälligkeiten):",
             ["Grafische Auswertung", "Detail-Tabelle"],
             horizontal=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="p3_outlier_view_toggle"
         )
 
-        if view_mode == "Grafische Auswertung":
+        if view_mode_outlier == "Grafische Auswertung":
 
             st.markdown("#### Fehlerschwerpunkte nach Gewerk")
             grouped_gewerk = df_outlier['Gewerk_Name'].value_counts().reset_index()
@@ -71,7 +218,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
                 tooltip=['Gewerk', 'Anzahl'],
                 color=alt.value("#E4572E")
             ).properties(height=280)
-            st.altair_chart(chart_gewerk, use_container_width=True)
+            st.altair_chart(chart_gewerk, width="stretch")
 
             st.markdown("---")
 
@@ -79,7 +226,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
 
             df_hw = df_outlier.copy()
 
-            grouped_hw = df_hw.groupby('Handwerker_Name')['count'].sum().reset_index()
+            grouped_hw = df_hw.groupby('Handwerker_Name', observed=True)['count'].sum().reset_index()
             grouped_hw.columns = ['Handwerker', 'Summe_Fehler']
 
             grouped_hw = grouped_hw.sort_values('Summe_Fehler', ascending=False).head(10)
@@ -90,9 +237,10 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
                 tooltip=['Handwerker', 'Summe_Fehler'],
                 color=alt.value("#442D7B")
             ).properties(height=280)
-            st.altair_chart(chart_hw, use_container_width=True)
+            st.altair_chart(chart_hw, width="stretch")
 
         else:
+            # Tabellenansicht Outlier
             df_display = df_outlier.copy()
 
             if 'ratio' in df_display.columns:
@@ -110,8 +258,17 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
 
             st.dataframe(
                 df_display[cols_to_show].rename(columns=rename_map),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True
+            )
+            
+            # Download Button für die Outlier Tabelle
+            csv_outlier = df_display.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Tabelle als CSV herunterladen",
+                data=csv_outlier,
+                file_name="handwerker_outliers.csv",
+                mime="text/csv"
             )
 
     else:

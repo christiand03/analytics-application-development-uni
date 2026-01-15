@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
+def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, issues_df=None):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -22,11 +22,15 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None):
     above_50k_count = len(above_50k_df)
 
     auftraege_abgleich = metrics_combined.get("auftraege_abgleich")
+
+    numeric_issues = issues_df["numeric_issues"] if issues_df is not None else 0
     
     # --- KPIs ---
-    kpi_cols = st.columns(2)
-    with kpi_cols[0]: st.metric(label="Fehleranzahl Zeitwerte", value=zeitwert_error_count, delta=get_delta("count_zeitwert_errors"), delta_color="inverse")
-    with kpi_cols[1]: st.metric(label="Anzahl Aufträge über 50.000€", value=above_50k_count, delta=get_delta("count_above_50k"), delta_color="inverse")
+    kpi_cols = st.columns(3)
+    with kpi_cols[0]: st.metric(label="Numerische Auffälligkeiten", value=numeric_issues, delta=get_delta("numeric_issues"), delta_color="inverse")
+    with kpi_cols[1]: st.metric(label="Fehleranzahl Zeitwerte", value=zeitwert_error_count, delta=get_delta("count_zeitwert_errors"), delta_color="inverse")
+    with kpi_cols[2]: st.metric(label="Anzahl Aufträge über 50.000€", value=above_50k_count, delta=get_delta("count_above_50k"), delta_color="inverse")
+
 
     st.markdown("---")
 
