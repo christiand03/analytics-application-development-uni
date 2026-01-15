@@ -270,7 +270,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
                 }
 
                 cols_to_show = [c for c in rename_map.keys() if c in df_display.columns]
-
+                st.markdown(f"**Gefundene Einträge: {len(df_display)}**")
                 st.dataframe(
                     df_display[cols_to_show].rename(columns=rename_map),
                     width="stretch",
@@ -346,7 +346,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
                 }
 
                 cols_to_show = [c for c in rename_map.keys() if c in df_display.columns]
-
+                st.markdown(f"**Gefundene Einträge: {len(df_display)}**")
                 st.dataframe(
                     df_display[cols_to_show].rename(columns=rename_map),
                     width="stretch",
