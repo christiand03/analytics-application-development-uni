@@ -24,14 +24,27 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     auftraege_abgleich = metrics_combined.get("auftraege_abgleich")
 
     numeric_issues = issues_df["numeric_issues"] if issues_df is not None else 0
-    
+
+    anteil_zeitwert = (zeitwert_error_count / metrics_df1.get("row_count", 1)) * 100 if metrics_df1.get("row_count", 0) > 0 else 0
+    anteil_above_50k = (above_50k_count / metrics_df1.get("row_count", 1)) * 100 if metrics_df1.get("row_count", 0) > 0 else 0
+    anteil_summe = (auftraege_abgleich.shape[0] / metrics_df1.get("row_count", 1)) * 100 if metrics_df1.get("row_count", 0) > 0 else 0
+    val = (numeric_issues / (metrics_df1.get("row_count", 1)+ metrics_df2.get("row_count", 1))) * 100
+    anteil_numeric_issues = float(val) if (metrics_df1.get("row_count", 0) + metrics_df2.get("row_count", 0)) > 0 else 0
+
     # --- KPIs ---
-    kpi_cols = st.columns(3)
-    with kpi_cols[0]: st.metric(label="Numerische Auffälligkeiten", value=numeric_issues, delta=get_delta("numeric_issues"), delta_color="inverse")
-    with kpi_cols[1]: st.metric(label="Fehleranzahl Zeitwerte", value=zeitwert_error_count, delta=get_delta("count_zeitwert_errors"), delta_color="inverse")
-    with kpi_cols[2]: st.metric(label="Anzahl Aufträge über 50.000€", value=above_50k_count, delta=get_delta("count_above_50k"), delta_color="inverse")
-
-
+    kpi_cols = st.columns(4)
+    with kpi_cols[0]: 
+        st.metric(label="Numerische Auffälligkeiten", value=numeric_issues, delta=get_delta("numeric_issues"), delta_color="inverse", help="Numerische Fehler und Warnings im Datensatz")
+        st.caption(f"Anteil: {anteil_numeric_issues:.2f}% aller Datensätze")
+    with kpi_cols[1]: 
+        st.metric(label="Fehleranzahl Zeitwerte", value=zeitwert_error_count, delta=get_delta("count_zeitwert_errors"), delta_color="inverse", help="Anzahl der Fehler in Zeitwertspalte")
+        st.caption(f"Anteil: {anteil_zeitwert:.2f}% aller Datensätze")
+    with kpi_cols[2]: 
+        st.metric(label="Anzahl Aufträge über 50.000€", value=above_50k_count, delta=get_delta("count_above_50k"), delta_color="inverse", help="Anzahl der Aufträge mit einem Wert über 50.000€")
+        st.caption(f"Anteil: {anteil_above_50k:.2f}% aller Datensätze")
+    with kpi_cols[3]: 
+        st.metric(label="Abweichung Summen", value=auftraege_abgleich.shape[0] if auftraege_abgleich is not None else 0, delta=get_delta("count_abweichung_summen"), delta_color="inverse", help="Anzahl der Aufträge mit Abweichungen in den Summen (Auftragssumme = Summe der Positionen)")
+        st.caption(f"Anteil: {anteil_summe:.2f}% aller Datensätze")
     st.markdown("---")
 
     st.subheader("Fehlerverlauf im Vergleich")
@@ -120,6 +133,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 # Welche Spalten sollten noch rein um die Daten sinnvoll prüfen zu können? Aktuell kein Spaltenname da Series
     with chart_col1:
         st.subheader("Die inkorrekten Zeitwerte:")
+        st.caption("Auflistung aller Aufträge mit inkorrekten Zeitwerten in der Zeitwert-Spalte.")
         st.dataframe(zeitwert_error_df)
         csv_zeitwert = zeitwert_error_df.to_csv(index=False).encode('utf-8')
 
@@ -130,8 +144,10 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
             mime="text/csv",
         )
 
+
     with chart_col2:
         st.subheader("Abweichungen Auftragssumme vs. Positionssummen:")
+        st.caption("Auflistung aller Aufträge, bei denen die Auftragssumme nicht mit der Summe der Positionen übereinstimmt.")
         st.dataframe(auftraege_abgleich)
         csv_abweichungen = auftraege_abgleich.to_csv(index=False).encode('utf-8')
         st.download_button(
@@ -142,6 +158,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
         )
 
     st.subheader("Aufträge über 50.000€:")
+    st.caption("Auflistung aller Aufträge mit einem Wert über 50.000€.")
     st.dataframe(above_50k_df)
     csv_above_50k = above_50k_df.to_csv(index=False).encode('utf-8')
 

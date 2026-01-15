@@ -33,15 +33,15 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
     total_issues = issues_df["overall_issues"] if issues_df is not None else 0
 
     with kpi_cols[0]:
-        st.metric(label="Auffälligkeiten", value=total_issues, help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("overall_issues"), delta_color="inverse")
+        st.metric(label="Auffälligkeiten", value=total_issues, help="Alle Fehler und Warnings im Datensatz", delta=get_delta("overall_issues"), delta_color="inverse")
     with kpi_cols[1]:
         st.metric(label="Aufträge (df)", value=f"{row_count_df1:,}".replace(",", "."), help="Anzahl Zeilen in Auftragsdaten (df).", delta=get_delta("count_total_orders"), delta_color="off")
     with kpi_cols[2]:
         st.metric(label="Positionen (df2)", value=f"{row_count_df2:,}".replace(",", "."), help="Anzahl Zeilen in Positionsdaten (df2).", delta=get_delta("count_total_positions"), delta_color="off")
     with kpi_cols[3]:
-        st.metric(label="Fehlerquoten (df) [%]", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df.", delta=get_delta("null_row_ratio_orders"), delta_color="inverse")
+        st.metric(label="Null-Anteil (Auftragsdaten)", value=f"{null_rows_df1:.2f}%", help="Anteil der Zeilen mit mindestens einem Nullwert (außer PLZ) in Auftragsdaten.", delta=get_delta("null_row_ratio_orders"), delta_color="inverse")
     with kpi_cols[4]:
-        st.metric(label="Fehlerquoten (df2) [%]", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Null-/Fehlerwert in df2.", delta=get_delta("null_row_ratio_positions"), delta_color="inverse")
+        st.metric(label="Null-Anteil (Positionsdaten)", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Nullwert (außer Bezeichnung) in Positionsdaten.", delta=get_delta("null_row_ratio_positions"), delta_color="inverse")
     with kpi_cols[5]:
         st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
     with kpi_cols[6]:
@@ -59,7 +59,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
              ("KVA nicht, Pos. ok" if (kva_unique is False and pos_unique is True) else
               ("n/v" if (kva_unique is None or pos_unique is None) else "beide nicht")))
         )
-        st.metric(label="Eindeutigkeit IDs", value=uniq_text, help="Prüft Einzigartigkeit von KvaRechnung_ID (df) und Position_ID (df2).")
+        st.metric(label="Eindeutigkeit IDs", value=uniq_text, help="Prüft Einzigartigkeit von KvaRechnung_ID (Auftragsdaten) und Position_ID (Positionsdaten).")
 
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 
@@ -131,6 +131,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
     # Chart 2: Fehlerhäufigkeit nach Wochentag und Stunde (Heatmap)
     with chart_col2:
         st.subheader("Fehlerquote nach Wochentag und Stunde")
+        st.caption("Diese Heatmap visualisiert Konzentrationen von Fehlern im Zeitverlauf. Je intensiver der Rotton, desto höher war die prozentuale Fehlerquote am jeweiligen Wochentag zu der entsprechenden Uhrzeit.")
         err_df = metrics_df1.get("error_frequency_weekday_hour", None)
         if isinstance(err_df, pd.DataFrame) and not err_df.empty:
             weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -155,13 +156,18 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df 
                 .properties(height=240, width="container")
             )
             st.altair_chart(heat, width="stretch")
+            st.caption("Hinweis: PLZ VN wird von OCR nicht gesetzt, daher extrem hohe Fehlerquoten an Wochenenden und nachts.")
+
         else:
             st.info("Keine Fehlerfrequenz-Daten verfügbar.")
 
+
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 
+
+
 # Chart 3: Avg. Positionen pro Auftrag über Monat (Trend)
-    st.subheader("Positionen pro Auftrag über Zeit (Monat)")
+    st.subheader("Positionen pro Auftrag über Zeit")
 
     if isinstance(pot_df, pd.DataFrame) and not pot_df.empty and {
         "Zeitperiode", "Avg_Positionen_pro_Auftrag", "Total_Positionen", "Anzahl_Auftraege"

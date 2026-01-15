@@ -24,8 +24,9 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     kundengruppe_containing_test = metrics_df1.get("test_kundengruppen_anzahl", 0)
     row_count = metrics_df1.get("row_count", 1) 
     text_issues = issues_df["text_issues"] if issues_df is not None else 0
-    # Berechnung Anteile
-    anteil = (kundengruppe_containing_test / row_count * 100) if row_count else 0
+    val = (text_issues / (metrics_df1.get("row_count", 1)+ metrics_df2.get("row_count", 1))) * 100
+    anteil_text_issues = float(val) if (metrics_df1.get("row_count", 0) + metrics_df2.get("row_count", 0)) > 0 else 0
+    anteil_testdaten = (kundengruppe_containing_test / row_count * 100) if row_count else 0
 
     # outlier KPI
     outlier_count = 0 if df_outlier is None else len(df_outlier[df_outlier['is_outlier'] == True])
@@ -40,6 +41,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
             delta=get_delta("text_issues"), 
             delta_color="inverse"
         )
+        st.caption(f"Anteil: {anteil_text_issues:.2f}% aller Datensätze")
     with kpi_cols[1]: 
         st.metric(
             label="Testdatensätze in Kundengruppe",
@@ -47,7 +49,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
             delta=get_delta("count_test_data_rows"), 
             delta_color="inverse"
         )
-        st.caption(f"Anteil: {anteil:.2f}% aller Datensätze")
+        st.caption(f"Anteil: {anteil_testdaten:.2f}% aller Datensätze")
 
     with kpi_cols[2]:
         st.metric(
@@ -64,6 +66,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
     # ZEITVERLAUF DIAGRAMM (MIT RAW DATA VIEW)
     st.subheader("Fehlerverlauf im Vergleich (Textuelle Daten)")
+    st.caption("Dieses Diagramm zeigt den Verlauf der ausgewählten Fehlerkategorien über den gewählten Zeitraum. Aktuell können nur Testdatensätze visualisiert werden.")
 
     def prepare_trend_data(df, label, time_col="CRMEingangszeit"):
         """Bereitet DataFrame für das Zeitreihendiagramm (Aggregation) vor."""
@@ -144,6 +147,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
                 ).interactive()
 
                 st.altair_chart(line_chart, width="stretch")
+
             else:
                 st.warning("Keine Chart-Daten für die aktuelle Auswahl verfügbar.")
         
@@ -195,6 +199,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
 
     # DETAIL ANALYSE (OUTLIERS)
     st.subheader("Statistische Auffälligkeiten (Handwerker vs. Gewerk)")
+    st.caption("Diese Analyse identifiziert Handwerker und Gewerke, bei den auffällig viele Zuordnungsfehler auftreten. (Der Namensabgleich prüft, ob der Handwerkername auf das Gewerk hinweist)")
 
     if df_outlier is not None and not df_outlier.empty:
 
