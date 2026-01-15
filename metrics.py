@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import time
 import re
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import paired_cosine_distances
@@ -27,14 +26,6 @@ def ratio_null_values_column(input_df):
           |column_name |  null_ratio (float)|
         with null_ratio being the percentage amount of null entries in the column  
     """
-    # length_df = len(input_df)
-    # ratio_dict = {}
-    # for column in input_df.columns:
-    #     null_values = input_df[column].isna().sum()
-    #     ratio_null = round(null_values / length_df * 100, 2) # In Percent
-    #     ratio_dict[column] = ratio_null
-
-    # return ratio_dict
     null_ratio_df = pd.DataFrame(input_df.isna()
                              .mean()
                              .mul(100)
@@ -43,8 +34,9 @@ def ratio_null_values_column(input_df):
                              .reset_index()
                              )
     return null_ratio_df
+
 # wird nur wiederverwendet
-def ratio_null_values_rows(input_df, relevant_columns=None):
+def ratio_null_values_rows(input_df, exclude_cols=None):
     """Helper function that calculates the ratio of rows containing null values in all / only chosen columns to total number of rows.  
     
     Parameters
@@ -59,10 +51,10 @@ def ratio_null_values_rows(input_df, relevant_columns=None):
     row_ratio: float
         Percentage value of rows with at least one null value in the given columns.
     """
-    if relevant_columns is None:
-        df_to_check = input_df
-    else:
-        df_to_check = input_df[relevant_columns]
+    if exclude_cols is None:
+        exclude_cols = []
+    
+    df_to_check = input_df.drop(columns=exclude_cols, errors='ignore')
 
     total_rows = len(df_to_check)
     if total_rows == 0:
@@ -91,14 +83,13 @@ def Kundengruppe_containing_test(df, return_frame=False):
         DataFrame containing all found test data, returned only if return_frame = True
     """
     test_Kundengruppen = df[df['Kundengruppe'].str.contains('test', case=False, na=False)]
-    #anzahl_test = len(df[df['Kundengruppe'].str.contains('test', case=False, na=False)])
     anzahl_test = len(test_Kundengruppen)
     if return_frame:
-        return anzahl_test, test_Kundengruppen
+        return test_Kundengruppen
     else:
         return anzahl_test
 
-# Allgemeine Statistiken für numerische Spalten als dictionary, könnte als dataframe erweitert werden
+# Allgemeine Statistiken für numerische Spalten als dictionary, könnte als dataframe erweitert werden, ### wird nicht mehr verwendet
 def allgemeine_statistiken_num(input_df):
     """Calculates simple statistical values for all columns containing number data. 
 
@@ -154,7 +145,6 @@ def plausibilitaetscheck_forderung_einigung(input_df):
         avg: float
             average difference over all found instances    
     """
-    #set filter
     faulty_rows_mask = input_df['Einigung_Netto'].round(2) > input_df['Forderung_Netto'].round(2)
     #count amount of positives
     count = faulty_rows_mask.sum()
@@ -236,11 +226,15 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
     grouped_col_ratios: pandas.DataFrame or None
         DataFrame containing groups and null-value-ratios per column for each.             
     """
-    #group_by_col = "Kundengruppe" #needs to be set by Frontend, remove this once implemented in dashboard
 
     if group_by_col is None:
-        null_ratio_rows = ratio_null_values_rows(input_df)
-        null_ratio_cols = ratio_null_values_column(input_df)
+        if 'PLZ_SO' in input_df.columns:
+            null_ratio_rows = ratio_null_values_rows(input_df, exclude_cols=['PLZ_SO', 'PLZ_HW', 'PLZ_VN', 'address1_postalcode'])
+            null_ratio_cols = ratio_null_values_column(input_df)
+            
+        else:
+            null_ratio_rows = ratio_null_values_rows(input_df, exclude_cols=['Bemerkung'])
+            null_ratio_cols = ratio_null_values_column(input_df)
 
         return null_ratio_rows, null_ratio_cols
 
@@ -307,7 +301,7 @@ def discount_check(df2):
     potential_errors = (~df2['Plausibel']).sum()
     return potential_errors
 
-# give the dataframe of Proformabelege and the count
+
 def proformabelege(df):
     """Function that checks for pro forma receipts in the 'Auftragsdaten' data set. 
 
@@ -395,21 +389,6 @@ def false_negative_df(df):
     error_count = sum(bool_mask.sum() for bool_mask in false_negatives.values())
     return error_count
 
-    # einigung_negative = df['Einigung_Netto'] < 0
-    # else_negative = (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0)
-    # einigung_false_data = df[einigung_negative & ~else_negative]
-
-    # empfehlung_negative = df['Empfehlung_Netto'] < 0
-    # else_negative = (df['Forderung_Netto'] < 0) & (df['Einigung_Netto'] < 0)
-    # empfehlung_false_data = df[empfehlung_negative & ~else_negative]
-
-    # forderung_negative = df['Forderung_Netto'] < 0
-    # else_negative = (df['Einigung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0)
-    # forderung_false_data = df[forderung_negative & ~else_negative]
-
-    # error_count = len(einigung_false_data) + len(empfehlung_false_data) + len(forderung_false_data)
-    # return error_count
-
 
 
 
@@ -439,7 +418,7 @@ def false_negative_df2(df2):
     total_errors = (count_menge_neg + count_menge_einigung_neg + error_ep + error_ep_einigung + error_forderung + error_einigung)
     return total_errors
 
-# gives dataframe of all values above 50k
+
 def above_50k(df):
     """Checks for all receipts or positions that exceed a limit for suspicion of €50k in Einigung_Netto and need to be manually vetted.
 
@@ -481,7 +460,7 @@ def check_zeitwert(df):
     return result_df
 
 
-#print(false_negative_df2(df2))
+
 # sollte auf jeden fall positions_count() nutzen
 def positions_per_order_over_time(df, df2, time_col="CRMEingangszeit"):
     """
@@ -991,31 +970,4 @@ def get_plausi_outliers_df2(df2):
 
 if __name__ == "__main__":
     df, df2 = load_data()
-
-    # df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
-    # start_time = time.time()
-    # result = get_mismatched_entries(df)
-    # end_time = time.time()
-    # print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
-
-    # # Ausgabe
-    # print(f"\nGefundene Unstimmigkeiten: {len(result)}")
-    # print("-" * 50)
-    # if not result.empty:
-    #     print(result[['Gewerk_Name', 'Handwerker_Name', 'Similarity_Score']])
-    # else:
-    #     print("Alles scheint zu passen!")
-
-
-    # start_time = time.time()
-    # ergebnis = abgleich_auftraege(df, df2)
-    # print("Aufträge mit Abweichungen:")
-    # print(ergebnis)
-    # end_time = time.time()
-    # print(f"Berechnungsdauer: {end_time - start_time:.2f} Sekunden")
-
-
-    # df_added = handwerker_gewerke_outlier(df)
-    # df_true = df_added[df_added['is_outlier'] == True].copy()
-    # df_true['Check_Result'] = check_keywords_vectorized(df_true)
-    # print(df_true)
+    print(data_cleanliness(df, group_by_col=None))

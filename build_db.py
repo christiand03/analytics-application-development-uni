@@ -130,8 +130,9 @@ total_positions = mt.count_rows(df2)
 empty_orders_count = mt.empty_orders(df)
 
 # --- 2. Data Quality (Nulls & Uniqueness) ---
-null_ratio_orders = mt.ratio_null_values_rows(df)
-null_ratio_positions = mt.ratio_null_values_rows(df2)
+# returns: (float, DataFrame) -> ignore the Dataframe (_)
+null_ratio_orders, _ = mt.data_cleanliness(df, group_by_col=None)
+null_ratio_positions, _ = mt.data_cleanliness(df2, group_by_col=None)
 unique_kva, unique_pos = mt.uniqueness_check(df, df2)
 
 # --- 3. Business Logic / Test Data ---
@@ -192,7 +193,7 @@ con.execute("CREATE OR REPLACE TABLE metric_null_ratios_per_column AS SELECT * F
 
 # 2. Test Data Entries (Returns (int, DataFrame) -> we want the DF)
 print("2. Test Data Check")
-_, df_test_rows = mt.Kundengruppe_containing_test(df, return_frame=True)
+df_test_rows = mt.Kundengruppe_containing_test(df, return_frame=True)
 if not df_test_rows.empty:
     con.execute("CREATE OR REPLACE TABLE metric_test_data_entries AS SELECT * FROM df_test_rows")
 else:
