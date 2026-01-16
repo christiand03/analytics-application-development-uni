@@ -82,6 +82,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
             outliers_view = plausi_df1
             id_col = "KvaRechnung_ID"
             file_suffix = "auftraege"
+            delta = get_delta("count_plausibility_errors_df")
         else:
             count_val = plausi_count_df2
             avg_val = plausi_avg_df2
@@ -90,9 +91,10 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
             outliers_view = plausi_outliers_df2
             id_col = "Position_ID"
             file_suffix = "positionen"
+            delta = get_delta("count_plausibility_errors_df2")
 
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Anzahl Fälle", value=f"{count_val:,}".replace(",", "."), help="Anzahl der Fälle, in denen Forderung_Netto < Einigung_Netto")
+        c1.metric("Anzahl Fälle", value=f"{count_val:,}".replace(",", "."), delta=delta, delta_color="inverse", help="Anzahl der Fälle, in denen Forderung_Netto < Einigung_Netto")
         c2.metric("Quote", f"{(count_val / total_rows) * 100:.2f}%" if total_rows else "NA", help="Anteil der fehlerhaften Fälle am gesamten Datensatz")
         c3.metric("Ø Abweichung", f"{avg_val:,.2f} €", help="Durchschnittliche Differenz zwischen Forderung_Netto und Einigung_Netto bei fehlerhaften Fällen")
 

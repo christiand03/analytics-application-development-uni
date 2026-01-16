@@ -301,10 +301,15 @@ issues = {
     'text_issues': [text_issues],
     'plausi_issues': [plausi_issues],
     'overall_issues': [overall_issues],
+    'count_zeitwert_errors': [len(zeitwert)],
     'count_above_50k': [len(df_above_50k)],
     'count_handwerker_outliers': [len(df_outliers_true)],
     'count_semantic_outliers': [len(df_semantic)],
-    'count_abweichung_summen': [len(df_mismatch)]
+    'count_abweichung_summen': [len(df_mismatch)],
+    'count_plausibility_errors_df': [plausibility_error_count_df],
+    'count_plausibility_errors_df2': [plausibility_error_count_df2],
+    'count_false_negative_df': [len(fn_details1)],
+    'count_false_negative_df2': [len(fn_details2)],
 }
 
 df_issues = pd.DataFrame(issues)
