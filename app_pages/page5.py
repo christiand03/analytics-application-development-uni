@@ -35,7 +35,7 @@ def refresh_table():
      st.session_state.reports_table = fetch_reports_table()
 
 # TODO:Alternative für duckdb schreiben, mit fetch nur bei bedarf
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df):
+def show_page():
     con = duckdb.connect("resources/dashboard_data.duckdb", read_only=True)
    
     try:

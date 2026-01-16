@@ -30,9 +30,6 @@ def compute_metrics_df1():
     null_ratios_cols = con.execute("SELECT * FROM metric_null_ratios_per_column").df()
     
     test_data_df = con.execute("SELECT * FROM metric_test_data_entries").df()
-    
-    stats_df = con.execute("SELECT * FROM metric_numeric_stats_auftragsdaten").df()
-    statistiken_num = stats_df.set_index('column_name').T.to_dict()
 
     plausi_df = con.execute("SELECT * FROM metric_plausibility_diffs_auftragsdaten").df()
 
@@ -63,7 +60,6 @@ def compute_metrics_df1():
         "null_ratio_rows": scalars['null_row_ratio_orders'],
         "test_kundengruppen_anzahl": scalars['count_test_data_rows'],
         "test_data_df": test_data_df,
-        "statistiken_num": statistiken_num,
         "plausi_forderung_einigung_df": plausi_df,
         "plausi_forderung_einigung_count": scalars['count_plausibility_errors_df'],
         "plausi_forderung_einigung_avg_diff": scalars['avg_plausibility_diff_df'],
@@ -95,9 +91,6 @@ def compute_metrics_df2():
     con = get_db_connection()
     scalars = con.execute("SELECT * FROM scalar_metrics").df().iloc[0]
 
-    stats_df2 = con.execute("SELECT * FROM metric_numeric_stats_positionsdaten").df()
-    statistiken_num = stats_df2.set_index('column_name').T.to_dict()
-    
     plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
 
     position_counts_df = con.execute("""
@@ -117,12 +110,10 @@ def compute_metrics_df2():
         "row_count": scalars['count_total_positions'],
         "null_ratio_cols": null_ratio_cols,
         "null_ratio_rows": scalars['null_row_ratio_positions'] if 'null_row_ratio_positions' in scalars else 0,
-        "statistiken_num": statistiken_num,
         "discount_check_errors": scalars['count_discount_logic_errors'],
         "position_counts_per_rechnung": position_counts_df,
         "plausi_forderung_einigung_count": scalars["count_plausibility_errors_df2"], 
         "plausi_forderung_einigung_avg_diff": scalars["avg_plausibility_diff_df2"],
-        #"false_negative": scalars['count_false_negative_df2'],
         "false_negative_stats": fn_stats_df2,
         "false_negative_details": fn_details_df2,
         "discount_stats": disc_stats,
@@ -285,15 +276,15 @@ elif selected == "Numerische Daten":
 
 elif selected == "Textuelle Daten":
     start = time.time()
-    page3.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df)
+    page3.show_page(metrics_df1, metrics_df2, comparison_df, issues_df)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
     start = time.time()
-    page4.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df)
+    page4.show_page(metrics_df1, metrics_df2, comparison_df, issues_df)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Data Drift":
     start = time.time()
-    page5.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df)
+    page5.show_page()
     print("page 5 render time:", round(time.time() - start, 2), "s")

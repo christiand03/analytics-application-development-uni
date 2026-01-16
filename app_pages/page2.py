@@ -29,7 +29,6 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     anteil_above_50k = (above_50k_count / row_count) * 100 
     anteil_summe = (auftraege_abgleich.shape[0] / row_count) * 100 
     anteil_numeric_issues = (numeric_issues / (row_count + row_count_df2)) * 100
-    print(type(anteil_numeric_issues))
 
     # --- KPIs ---
     kpi_cols = st.columns(4)

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, issues_df=None):
+def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -21,7 +21,6 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     plausi_list_df1 = plausi_df1['Diff']
     plausi_count_df1 = metrics_df1.get("plausi_forderung_einigung_count", 0)
     plausi_avg_df1 = metrics_df1.get("plausi_forderung_einigung_avg_diff", 0.0)
-    plausi_outliers_df1 = metrics_df1.get("plausi_forderung_einigung_df")
 
     plausi_count_df2 = metrics_df2.get("plausi_forderung_einigung_count", 0)
     plausi_avg_df2 = metrics_df2.get("plausi_forderung_einigung_avg_diff", 0.0)
@@ -80,7 +79,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
             avg_val = plausi_avg_df1
             diff_list = plausi_list_df1
             total_rows = total_df1
-            outliers_view = plausi_outliers_df1
+            outliers_view = plausi_df1
             id_col = "KvaRechnung_ID"
             file_suffix = "auftraege"
         else:

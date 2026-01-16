@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import re
-import time
 from sentence_transformers import SentenceTransformer
 import torch
 
@@ -89,44 +88,6 @@ def Kundengruppe_containing_test(df, return_frame=False):
     else:
         return anzahl_test
 
-# Allgemeine Statistiken für numerische Spalten als dictionary, könnte als dataframe erweitert werden, ### wird nicht mehr verwendet
-def allgemeine_statistiken_num(input_df):
-    """Calculates simple statistical values for all columns containing number data. 
-
-    Parameters
-    ----------
-    input_df : pandas.DataFrame
-        DataFrame that is to be evaluated.
-
-    Returns
-    -------
-    statistiken: dict
-        nested dictionary containing a dictionary for each column of input_df of the following form:
-            {mean= float, 
-            median= float,
-            std= float,
-            min= float,
-            max= float}
-        
-    """
-    statistiken = {}
-
-    for num_col in input_df.select_dtypes('number').columns:
-        statistiken[num_col] = {}
-        mean = input_df[num_col].mean()
-        median = input_df[num_col].median()
-        std = input_df[num_col].std()
-        min = input_df[num_col].min()
-        max = input_df[num_col].max()
-
-        statistiken[num_col]['mean'] = mean
-        statistiken[num_col]['median'] = median
-        statistiken[num_col]['std'] = std
-        statistiken[num_col]['min'] = min
-        statistiken[num_col]['max'] = max
-
-    return statistiken
-
 
 def plausibilitaetscheck_forderung_einigung(input_df):
     """Checks for diff between Einigung_Netto and Forderung_Netto for all rows in the given dataframe. Einigung > Forderung is assumed as significant error.
@@ -150,13 +111,13 @@ def plausibilitaetscheck_forderung_einigung(input_df):
     else:
         cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
 
-    results = input_df[cols]
-    faulty_rows_mask = results['Einigung_Netto'].round(2) > results['Forderung_Netto'].round(2)
-    #count amount of positives
+    temp_df = input_df[cols].copy()
+
+    faulty_rows_mask = temp_df['Einigung_Netto'].round(2) > temp_df['Forderung_Netto'].round(2)
     count = faulty_rows_mask.sum()
 
-    results['Diff'] = (results.loc[faulty_rows_mask, 'Einigung_Netto']-results.loc[faulty_rows_mask,'Forderung_Netto']).round(2)
-    results = results[results['Diff'] > 0]
+    results = temp_df.loc[faulty_rows_mask].copy()
+    results['Diff'] = (results['Einigung_Netto'] - results['Forderung_Netto']).round(2)
     avg = results['Diff'].mean()
 
     return results, count, avg
@@ -362,69 +323,6 @@ def empty_orders(df):
 
 
 
-def false_negative_df(df):
-    """Function that checks if, when at least two values in the Tuple (Forderung, Empfehlung, Einigung) in the 'Auftragsdaten' data set are negative,
-       the last remaining value is also negative. All instances where this doesnt hold are collected and counted.       
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame with 'Auftragsdaten' data set that is to be evaluated.
-
-    Returns
-    -------
-    error_count: int
-        Number of entries in any of the three columns Forderung, Empfehlung or Einigung failing the check.
-    """
-    is_negative = {# Select all rows with negative entries in given column
-        "Einigung_Netto": df['Einigung_Netto'] < 0,
-        "Empfehlung_Netto": df["Empfehlung_Netto"] < 0,
-        "Forderung_Netto": df["Forderung_Netto"] < 0,
-    }
-
-    others_are_negative = {# Select all rows with both other columns being negative
-        "Einigung_Netto": (df['Forderung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0),
-        "Empfehlung_Netto": (df['Forderung_Netto'] < 0) & (df['Einigung_Netto'] < 0),
-       "Forderung_Netto": (df['Einigung_Netto'] < 0) & (df['Empfehlung_Netto'] < 0),
-    }
-
-    false_negatives = {
-        col: (is_negative[col] & ~others_are_negative[col])
-        for col in is_negative
-    }
-    error_count = sum(bool_mask.sum() for bool_mask in false_negatives.values())
-    return error_count
-
-
-
-
-def false_negative_df2(df2):
-    """Checks 'Positionsdaten' data set for entries in the columns 'Menge', 'Menge_Einigung', 'EP', 'Ep_Einigung',
-       'Forderung_Netto' and 'Einigung_Netto' that are out of sensible value range. Returns the total error count over all columns. 
-
-    Parameters
-    ----------
-    df2 : pandas.DataFrame
-        DataFrame containing 'Positionsdaten' data set that is to be evaluated.
-
-    Returns
-    -------
-    total_errors: int
-        Total amount of non-valid entries aggregated over all relevant columns. 
-    """
-    count_menge_neg = (df2['Menge'] < 0).sum()
-    count_menge_einigung_neg = (df2['Menge_Einigung'] < 0).sum()
-
-    error_ep = ((df2['EP'] < 0) & (df2['EP_Einigung'] >= 0)).sum()
-    error_ep_einigung = ((df2['EP_Einigung'] < 0) & (df2['EP'] >= 0)).sum()
-
-    error_forderung = ((df2['Forderung_Netto'] < 0) & (df2['Einigung_Netto'] >= 0)).sum()
-    error_einigung = ((df2['Einigung_Netto'] < 0) & (df2['Forderung_Netto'] >= 0)).sum()
-
-    total_errors = (count_menge_neg + count_menge_einigung_neg + error_ep + error_ep_einigung + error_forderung + error_einigung)
-    return total_errors
-
-
 def above_50k(df):
     """Checks for all receipts or positions that exceed a limit for suspicion of €50k in Einigung_Netto and need to be manually vetted.
 
@@ -595,7 +493,7 @@ def error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit", relevant_col
     return result
 
 
-def get_mismatched_entries(df, threshold=0.2, process_batch_size=16384, encode_batch_size=128):
+def mismatched_entries(df, threshold=0.2, process_batch_size=16384, encode_batch_size=128):
     """
     Calculates the semantic similarity between 'Gewerk_Name' and 'Handwerker_Name' using a 
     Sentence Transformer model on the GPU. Identifies entries where the similarity score 
@@ -701,7 +599,7 @@ def handwerker_gewerke_outlier(df):
 
     return stats
 
-def check_keywords_vectorized(df):
+def check_keywords(df):
 
     keywords_mapping = {
     'Heizung- und Sanitärinstallation': ['heizung', 'sanitär', 'bad', 'gas', 'wasser', 'hls', 'wärme', 'installateur', 'haustechnik', 'therme', 'leckage'],
@@ -860,7 +758,7 @@ def abgleich_auftraege(df1, df2):
     return result_df
 
 
-def fn_df1_details(df):
+def false_negative_df1(df):
     """Calculates detailed statistics and specific error instances for the 'Tripel-Vorzeichen' check in 'Auftragsdaten'.
 
     Parameters
@@ -900,7 +798,7 @@ def fn_df1_details(df):
     return stats_df, details_df
 
 
-def fn_df2_details(df2):
+def false_negative_df2(df2):
     """
     Führt detaillierte Konsistenzprüfungen (Plausibilität & Vorzeichen) auf dem DataFrame durch
     und gibt sowohl eine statistische Zusammenfassung als auch die betroffenen Zeilen zurück.
@@ -991,7 +889,7 @@ def fn_df2_details(df2):
     return stats_df, details_df
 
 
-def get_discount_details(df2):
+def discount_details(df2):
     """Aggregates statistics on discount logic errors and returns detailed instances based on the 'Plausibel' column.
 
     Parameters
@@ -1022,52 +920,8 @@ def get_discount_details(df2):
     return stats_df, details_df
 
 
-# def get_plausi_outliers(df):
-#     """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Auftragsdaten'.
-
-#     Parameters
-#     ----------
-#     df : pandas.DataFrame
-#         DataFrame containing 'Auftragsdaten' data set that is to be evaluated.
-
-#     Returns
-#     -------
-#     top_outliers: pandas.DataFrame
-#         DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
-#     """
-#     cols = ["KvaRechnung_ID", "Forderung_Netto", "Einigung_Netto"]
-#     df_res = df[cols].copy()
-
-#     df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
-
-#     df_res = df_res[df_res["Diff"] > 0]
-
-#     outliers = df_res.sort_values(by="Diff", ascending=False)
-#     return outliers
-
-
-# def get_plausi_outliers_df2(df2):
-#     """Identifies the most significant outliers for the check 'Einigung > Forderung' in 'Positionsdaten'.
-
-#     Parameters
-#     ----------
-#     df2 : pandas.DataFrame
-#         DataFrame containing 'Positionsdaten' data set that is to be evaluated.
-
-#     Returns
-#     -------
-#     top_outliers: pandas.DataFrame
-#         DataFrame containing all entries with the highest positive difference (Einigung - Forderung).
-#     """
-#     cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto"]
-
-#     df_res = df2[cols].copy()
-
-#     df_res["Diff"] = df_res["Einigung_Netto"] - df_res["Forderung_Netto"]
-#     df_res = df_res[df_res["Diff"] > 0]
-
-#     outliers = df_res.sort_values(by="Diff", ascending=False)
-#     return outliers
-
 if __name__ == "__main__":
     df, df2 = load_data()
+
+    print(plausibilitaetscheck_forderung_einigung(df))
+    print(plausibilitaetscheck_forderung_einigung(df2))

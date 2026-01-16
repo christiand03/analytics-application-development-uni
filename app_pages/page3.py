@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df):
+def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):

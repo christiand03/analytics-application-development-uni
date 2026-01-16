@@ -149,8 +149,7 @@ _, proforma_count = mt.proformabelege(df)
 
 # --- 5. Logic Errors ---
 discount_logic_errors = mt.discount_check(df2)
-false_negative_df = mt.false_negative_df(df)
-#false_negative_df2 = mt.false_negative_df2(df2)
+
 
 
 print("--- Step 5: Constructing Scalar Metrics Table ---")
@@ -177,8 +176,6 @@ kpi_data = {
     'avg_plausibility_diff_df2': [plausibility_avg_diff_df2],
     'count_proforma_receipts': [proforma_count],
     'count_discount_logic_errors': [discount_logic_errors],
-    'count_false_negative_df': [false_negative_df],
-    #'count_false_negative_df2': [false_negative_df2]
 }
 
 df_scalars = pd.DataFrame(kpi_data)
@@ -190,46 +187,29 @@ con.execute("CREATE OR REPLACE TABLE scalar_metrics AS SELECT * FROM df_scalars"
 
 print("--- Step 7: Computing Complex Metrics and Creating Tables ---")
 
-# 1. Null Ratios per Column (Returns DataFrame)
+# Null Ratios per Column (Returns DataFrame)
 print("1. Null Ratios")
 df_null_ratios = mt.ratio_null_values_column(df)
 con.execute("CREATE OR REPLACE TABLE metric_null_ratios_per_column AS SELECT * FROM df_null_ratios")
 
-# 2. Test Data Entries (Returns (int, DataFrame) -> we want the DF)
+# Test Data Entries (Returns (int, DataFrame) -> we want the DF)
 print("2. Test Data Check")
 df_test_rows = mt.Kundengruppe_containing_test(df, return_frame=True)
-if not df_test_rows.empty:
-    con.execute("CREATE OR REPLACE TABLE metric_test_data_entries AS SELECT * FROM df_test_rows")
-else:
-    # Create empty table with schema if no data found
-    con.execute("CREATE OR REPLACE TABLE metric_test_data_entries AS SELECT * FROM df WHERE 1=0")
+con.execute("CREATE OR REPLACE TABLE metric_test_data_entries AS SELECT * FROM df_test_rows")
 
-# 3. Numeric Statistics (Returns Dict -> Convert to DF)
-print("3. Numeric Stats")
-stats_dict_df = mt.allgemeine_statistiken_num(df)
-# Transpose so columns are 'mean', 'std', etc., and index is the column name
-df_stats_df = pd.DataFrame(stats_dict_df).T.reset_index().rename(columns={'index': 'column_name'})
-con.execute("CREATE OR REPLACE TABLE metric_numeric_stats_auftragsdaten AS SELECT * FROM df_stats_df")
-
-stats_dict_df2 = mt.allgemeine_statistiken_num(df2)
-# Transpose so columns are 'mean', 'std', etc., and index is the column name
-df_stats_df2 = pd.DataFrame(stats_dict_df2).T.reset_index().rename(columns={'index': 'column_name'})
-con.execute("CREATE OR REPLACE TABLE metric_numeric_stats_positionsdaten AS SELECT * FROM df_stats_df2")
-
-# 4. Plausibility Check (Returns (DataFrame, int, avg) -> only extract the DataFrame)
-print("4. Plausibility Differences")
+# Plausibility Check (Returns (DataFrame, int, avg) -> only extract the DataFrame)
+print("3. Plausibility Differences")
 df_plausi_df, _, _ = mt.plausibilitaetscheck_forderung_einigung(df)
 con.execute("CREATE OR REPLACE TABLE metric_plausibility_diffs_auftragsdaten AS SELECT * FROM df_plausi_df")
 
 df_plausi_df2, _, _ = mt.plausibilitaetscheck_forderung_einigung(df2)
 con.execute("CREATE OR REPLACE TABLE metric_plausibility_diffs_positionsdaten AS SELECT * FROM df_plausi_df2")
 
-# 5. Data Cleanliness Grouped (Returns (Series, DataFrame))
-print("5. Data Cleanliness Grouped")
+# Data Cleanliness Grouped (Returns (Series, DataFrame))
+print("4. Data Cleanliness Grouped")
 series_row_ratios_grouped_df, df_col_ratios_grouped_df = mt.data_cleanliness(df, group_by_col="Kundengruppe")
 
 # Reset index to make 'Kundengruppe' a real column
-# df_clean_cols_df = df_col_ratios_grouped_df.reset_index()
 con.execute("CREATE OR REPLACE TABLE metric_cleanliness_cols_grouped_auftragsdaten AS SELECT * FROM df_col_ratios_grouped_df")
 
 # Handle the Series part (Rows)
@@ -237,7 +217,7 @@ df_clean_rows_df = series_row_ratios_grouped_df.to_frame(name='row_null_ratio').
 con.execute("CREATE OR REPLACE TABLE metric_cleanliness_rows_grouped_auftragsdaten AS SELECT * FROM df_clean_rows_df")
 
 
-print("6. Data Cleanliness Ungrouped")
+print("5. Data Cleanliness Ungrouped")
 _, df_col_ratios_ungrouped_df = mt.data_cleanliness(df, group_by_col=None)
 df_col_ratios_ungrouped_df = df_col_ratios_ungrouped_df.rename(columns={'index': 'column_name'})
 con.execute("CREATE OR REPLACE TABLE metric_cleanliness_cols_ungrouped_auftragsdaten AS SELECT * FROM df_col_ratios_ungrouped_df")
@@ -247,47 +227,47 @@ df_col_ratios_ungrouped_df2 = df_col_ratios_ungrouped_df2.rename(columns={'index
 con.execute("CREATE OR REPLACE TABLE metric_cleanliness_cols_ungrouped_positionsdaten AS SELECT * FROM df_col_ratios_ungrouped_df2")
 
 
-# 7. Proforma Receipts Returns (DataFrame, int)
-print("7. Proforma Receipts")
+# Proforma Receipts Returns (DataFrame, int)
+print("6. Proforma Receipts")
 df_proforma, _ = mt.proformabelege(df)
 con.execute("CREATE OR REPLACE TABLE metric_proforma AS SELECT * FROM df_proforma")
 
-# 8. High Value > 50k (Returns DataFrame)
-print("8. Suspiciously high Value")
+# High Value > 50k (Returns DataFrame)
+print("7. Suspiciously high Value")
 df_above_50k = mt.above_50k(df)
 con.execute("CREATE OR REPLACE TABLE metric_above_50k AS SELECT * FROM df_above_50k")
 
-# 9. Zeitwert Errors (Returns Series -> Convert to DF)
-print("9. Zeitwert Errors")
+# Zeitwert Errors (Returns Series -> Convert to DF)
+print("8. Zeitwert Errors")
 zeitwert = mt.check_zeitwert(df)
 #df_zeitwert = zeitwert.to_frame(name='zeitwert_diff')
 con.execute("CREATE OR REPLACE TABLE metric_zeitwert_errors AS SELECT * FROM zeitwert")
 
-# 10. Positions over Time (Returns DataFrame)
-print("10. Positions Over Time")
+# Positions over Time (Returns DataFrame)
+print("9. Positions Over Time")
 df_pos_time = mt.positions_per_order_over_time(df, df2, time_col="CRMEingangszeit")
 con.execute("CREATE OR REPLACE TABLE metric_positions_over_time AS SELECT * FROM df_pos_time")
 
-# 11. Error Frequency Heatmap (Returns DataFrame)
-print("11. Error Frequency Heatmap")
+# Error Frequency Heatmap (Returns DataFrame)
+print("10. Error Frequency Heatmap")
 df_heatmap = mt.error_frequency_by_weekday_hour(df, time_col="CRMEingangszeit")
 con.execute("CREATE OR REPLACE TABLE metric_error_heatmap AS SELECT * FROM df_heatmap")
 
-# 12. Order vs Position Financial Mismatch (Returns DataFrame)
-print("12. Order/Position Mismatch")
+# Order vs Position Financial Mismatch (Returns DataFrame)
+print("11. Order/Position Mismatch")
 df_mismatch = mt.abgleich_auftraege(df, df2)
 con.execute("CREATE OR REPLACE TABLE metric_order_pos_mismatch AS SELECT * FROM df_mismatch")
 
-# 13. Handwerker Outliers (Returns DataFrame)
-print("13. Handwerker Outliers")
+# Handwerker Outliers (Returns DataFrame)
+print("12. Handwerker Outliers")
 df_outlier = mt.handwerker_gewerke_outlier(df)
 df_outliers_true = df_outlier[df_outlier['is_outlier'] == True].copy()
-df_outliers_true['Check_Result'] = mt.check_keywords_vectorized(df_outliers_true)
+df_outliers_true['Check_Result'] = mt.check_keywords(df_outliers_true)
 con.execute("CREATE OR REPLACE TABLE metric_handwerker_outliers AS SELECT * FROM df_outliers_true")
 
-# 14. Semantic Handwerker Mismatches (Returns DataFrame)
-print("14. Semantic Handwerker Mismatches")
-df_semantic = mt.get_mismatched_entries(df)
+# Semantic Handwerker Mismatches (Returns DataFrame)
+print("13. Semantic Handwerker Mismatches")
+df_semantic = mt.mismatched_entries(df)
 con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
 
 # Optional: Leere Tabelle in DB anlegen, falls mt.get_mismatched_entries(df) nicht ausgeführt werden kann
@@ -295,31 +275,25 @@ con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM
 #con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT 'dummy' as col1 WHERE 1=0")
 
 print("Calculating Extended Chart Data...")
-# page4 Tab 1
-# plausi_outliers = mt.get_plausi_outliers(df)
-# con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df1 AS SELECT * FROM plausi_outliers")
-# plausi_outliers2 = mt.get_plausi_outliers_df2(df2)
-# con.execute("CREATE OR REPLACE TABLE metric_plausi_outliers_df2 AS SELECT * FROM plausi_outliers2")
-
 # page4 Tab 2
-disc_stats, disc_details = mt.get_discount_details(df2)
+disc_stats, disc_details = mt.discount_details(df2)
 con.execute("CREATE OR REPLACE TABLE metric_discount_stats AS SELECT * FROM disc_stats")
 con.execute("CREATE OR REPLACE TABLE metric_discount_details AS SELECT * FROM disc_details")
 
 # page4 Tab 4
-fn_stats1, fn_details1 = mt.fn_df1_details(df)
+fn_stats1, fn_details1 = mt.false_negative_df1(df)
 con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df1 AS SELECT * FROM fn_stats1")
 con.execute("CREATE OR REPLACE TABLE metric_fn_details_df1 AS SELECT * FROM fn_details1")
 
 # page4 Tab 5
-fn_stats2, fn_details2 = mt.fn_df2_details(df2)
+fn_stats2, fn_details2 = mt.false_negative_df2(df2)
 con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df2 AS SELECT * FROM fn_stats2")
 con.execute("CREATE OR REPLACE TABLE metric_fn_details_df2 AS SELECT * FROM fn_details2")
 
 print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
 text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
-plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + false_negative_df + len(fn_details2)
+plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2)
 overall_issues = numeric_issues + text_issues + plausi_issues
 
 issues = {
@@ -327,7 +301,6 @@ issues = {
     'text_issues': [text_issues],
     'plausi_issues': [plausi_issues],
     'overall_issues': [overall_issues],
-    'count_zeitwert_errors': [len(zeitwert)],
     'count_above_50k': [len(df_above_50k)],
     'count_handwerker_outliers': [len(df_outliers_true)],
     'count_semantic_outliers': [len(df_semantic)],
