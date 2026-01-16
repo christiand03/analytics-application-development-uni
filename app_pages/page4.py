@@ -39,7 +39,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
     fn_stats_df1 = metrics_df1.get("false_negative_stats")
     fn_details_df1 = metrics_df1.get("false_negative_details")
 
-    fn_count_df2 = metrics_df2.get("false_negative", 0)
+    fn_count_df2 = len(metrics_df2.get("false_negative_details"))
     fn_stats_df2 = metrics_df2.get("false_negative_stats")
     fn_details_df2 = metrics_df2.get("false_negative_details")
 

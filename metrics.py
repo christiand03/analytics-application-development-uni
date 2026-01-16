@@ -900,53 +900,90 @@ def fn_df1_details(df):
     return stats_df, details_df
 
 
-def get_fn_df2_details(df2):
-    """Calculates detailed statistics and specific error instances for consistency checks in 'Positionsdaten'.
+def fn_df2_details(df2):
+    """
+    Führt detaillierte Konsistenzprüfungen (Plausibilität & Vorzeichen) auf dem DataFrame durch
+    und gibt sowohl eine statistische Zusammenfassung als auch die betroffenen Zeilen zurück.
+
+    Die Funktion prüft folgende Kriterien (sofern die Spalten existieren):
+    1. 'Menge' < 0
+    2. 'Menge_Einigung' < 0
+    3. Vorzeichen-Widerspruch zwischen 'EP' und 'EP_Einigung' (einer negativ, einer positiv)
+    4. Vorzeichen-Widerspruch zwischen 'Forderung_Netto' und 'Einigung_Netto'
 
     Parameters
     ----------
     df2 : pandas.DataFrame
-        DataFrame containing 'Positionsdaten' data set that is to be evaluated.
+        Der DataFrame mit den Positionsdaten, der überprüft werden soll.
+        Erwartet idealerweise Spalten wie 'Menge', 'EP', 'Forderung_Netto', etc.
+        Fehlende Spalten werden ignoriert (führen nicht zum Absturz).
 
     Returns
     -------
-    stats_df: pandas.DataFrame
-        DataFrame containing error counts per category (e.g. 'Menge < 0', 'Vorzeichen Mismatch').
-    details_df: pandas.DataFrame
-        DataFrame containing specific error instances (e.g. sign mismatches).
+    stats_df : pandas.DataFrame
+        Eine Tabelle mit zwei Spalten: 'Kategorie' (Art des Fehlers) und 'Anzahl' (Häufigkeit).
+        Bleibt leer, wenn keine Fehler gefunden wurden.
+        
+    details_df : pandas.DataFrame
+        Ein Auszug aus df2, der nur die Zeilen enthält, in denen mindestens ein Fehler gefunden wurde.
+        Enthält nur relevante Spalten ('Position_ID', 'Menge', 'EP', Beträge, etc.).
+        Falls 'Position_ID' fehlt, wird der DataFrame-Index als ID verwendet.
     """
     errors_list = []
+    
+    n = len(df2)
+    mask_menge = pd.Series([False] * n, index=df2.index)
+    mask_menge_ein = pd.Series([False] * n, index=df2.index)
+    mask_ep = pd.Series([False] * n, index=df2.index)
+    mask_betrag = pd.Series([False] * n, index=df2.index)
 
     if "Menge" in df2.columns:
-        c = (df2['Menge'] < 0).sum()
-        if c > 0: errors_list.append({"Kategorie": "Menge < 0", "Anzahl": int(c)})
+        mask_menge = (df2['Menge'] < 0) 
+        cnt = mask_menge.sum()
+        if cnt > 0: 
+            errors_list.append({"Kategorie": "Menge < 0", "Anzahl": int(cnt)})
 
     if "Menge_Einigung" in df2.columns:
-        c = (df2['Menge_Einigung'] < 0).sum()
-        if c > 0: errors_list.append({"Kategorie": "Menge_Einigung < 0", "Anzahl": int(c)})
+        mask_menge_ein = (df2['Menge_Einigung'] < 0)
+        cnt = mask_menge_ein.sum()
+        if cnt > 0: 
+            errors_list.append({"Kategorie": "Menge_Einigung < 0", "Anzahl": int(cnt)})
 
-    mask_ep = (df2['EP'] < 0) ^ (df2['EP_Einigung'] < 0)
-    if mask_ep.sum() > 0:
-        errors_list.append({"Kategorie": "Vorzeichen EP ungleich", "Anzahl": int(mask_ep.sum())})
+    if "EP" in df2.columns and "EP_Einigung" in df2.columns:
+        mask_ep = (df2['EP'] < 0) ^ (df2['EP_Einigung'] < 0)
+        cnt = mask_ep.sum()
+        if cnt > 0:
+            errors_list.append({"Kategorie": "Vorzeichen EP ungleich", "Anzahl": int(cnt)})
 
-    mask_betrag = (df2['Forderung_Netto'] < 0) ^ (df2['Einigung_Netto'] < 0)
-    if mask_betrag.sum() > 0:
-        errors_list.append({"Kategorie": "Vorzeichen Betrag ungleich", "Anzahl": int(mask_betrag.sum())})
+    if "Forderung_Netto" in df2.columns and "Einigung_Netto" in df2.columns:
+        mask_betrag = (df2['Forderung_Netto'] < 0) ^ (df2['Einigung_Netto'] < 0)
+        cnt = mask_betrag.sum()
+        if cnt > 0:
+            errors_list.append({"Kategorie": "Vorzeichen Betrag ungleich", "Anzahl": int(cnt)})
 
     stats_df = pd.DataFrame(errors_list)
 
+    total_mask = mask_menge | mask_menge_ein | mask_ep | mask_betrag
+
     details_df = pd.DataFrame()
-    if mask_betrag.any():
-        cols = ["Position_ID", "Forderung_Netto", "Einigung_Netto", "Menge", "Bezeichnung"]
+    
+    if total_mask.any():
+        cols = [
+            "Position_ID", 
+            "Bezeichnung",
+            "Menge", "Menge_Einigung",
+            "EP", "EP_Einigung",
+            "Forderung_Netto", "Einigung_Netto" 
+        ]
 
         if "Position_ID" not in df2.columns:
-            temp_df = df2.loc[mask_betrag].copy()
+            temp_df = df2.loc[total_mask].copy()
             if "Position_ID" not in temp_df.columns:
                 temp_df = temp_df.reset_index()
                 if "index" in temp_df.columns:
                     temp_df = temp_df.rename(columns={"index": "Position_ID"})
         else:
-            temp_df = df2.loc[mask_betrag]
+            temp_df = df2.loc[total_mask].copy()
 
         available_cols = [c for c in cols if c in temp_df.columns]
         details_df = temp_df[available_cols]

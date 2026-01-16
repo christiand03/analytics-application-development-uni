@@ -150,7 +150,7 @@ _, proforma_count = mt.proformabelege(df)
 # --- 5. Logic Errors ---
 discount_logic_errors = mt.discount_check(df2)
 false_negative_df = mt.false_negative_df(df)
-false_negative_df2 = mt.false_negative_df2(df2)
+#false_negative_df2 = mt.false_negative_df2(df2)
 
 
 print("--- Step 5: Constructing Scalar Metrics Table ---")
@@ -178,7 +178,7 @@ kpi_data = {
     'count_proforma_receipts': [proforma_count],
     'count_discount_logic_errors': [discount_logic_errors],
     'count_false_negative_df': [false_negative_df],
-    'count_false_negative_df2': [false_negative_df2]
+    #'count_false_negative_df2': [false_negative_df2]
 }
 
 df_scalars = pd.DataFrame(kpi_data)
@@ -312,14 +312,14 @@ con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df1 AS SELECT * FROM fn_sta
 con.execute("CREATE OR REPLACE TABLE metric_fn_details_df1 AS SELECT * FROM fn_details1")
 
 # page4 Tab 5
-fn_stats2, fn_details2 = mt.get_fn_df2_details(df2)
+fn_stats2, fn_details2 = mt.fn_df2_details(df2)
 con.execute("CREATE OR REPLACE TABLE metric_fn_stats_df2 AS SELECT * FROM fn_stats2")
 con.execute("CREATE OR REPLACE TABLE metric_fn_details_df2 AS SELECT * FROM fn_details2")
 
 print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
 text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
-plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + false_negative_df + false_negative_df2
+plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + false_negative_df + len(fn_details2)
 overall_issues = numeric_issues + text_issues + plausi_issues
 
 issues = {

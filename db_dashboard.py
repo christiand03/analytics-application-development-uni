@@ -122,7 +122,7 @@ def compute_metrics_df2():
         "position_counts_per_rechnung": position_counts_df,
         "plausi_forderung_einigung_count": scalars["count_plausibility_errors_df2"], 
         "plausi_forderung_einigung_avg_diff": scalars["avg_plausibility_diff_df2"],
-        "false_negative": scalars['count_false_negative_df2'],
+        #"false_negative": scalars['count_false_negative_df2'],
         "false_negative_stats": fn_stats_df2,
         "false_negative_details": fn_details_df2,
         "discount_stats": disc_stats,
