@@ -67,7 +67,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
         st.caption(f"Anteil: {outlier_share:.2f}% der Auftragsdaten")
     with kpi_cols[3]:
         st.metric(
-            label="Auffällige Gewerk-Zuord. (KI)",
+            label="Auffällige Gewerk-Zuordnungen (semantisch)",
             value=f"{semantic_count:,}".replace(",", "."),
             delta=get_delta("count_semantic_outliers"), 
             delta_color="inverse",
