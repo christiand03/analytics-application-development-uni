@@ -4,6 +4,7 @@ import duckdb
 import time
 import metrics as mt
 import os
+import data_cleaning as dc
 
 DB_DIR = "resources"
 DB_NAME = "dashboard_data.duckdb"
@@ -30,85 +31,10 @@ if os.path.exists(DB_PATH):
 start_time = time.time()
 
 print("--- Step 1: Loading Data ---")
-df = pd.read_parquet("resources/Auftragsdaten")
-df2 = pd.read_parquet("resources/Positionsdaten")
-df3 = pd.read_parquet("resources/Auftragsdaten_Zeit")
+auftragsdaten, positionsdaten, zeitdaten = dc.load_data()
 
 print("--- Step 2: Merging & Cleaning ---")
-df = pd.merge(df, df3, on='KvaRechnung_ID', how='left')
-df = df.drop(["Auftrag_ID_y", "Schadensnummer_y"], axis=1)
-df = df.rename(columns={'Auftrag_ID_x': 'AuftragID', 'Schadensnummer_x': 'Schadensnummer'})
-df2 = pd.merge(df2,df[['KvaRechnung_ID','CRMEingangszeit']], on='KvaRechnung_ID', how='left')
-df = pd.merge(df, mt.position_count(df2), on='KvaRechnung_ID', how='left')
-df['PositionsAnzahl'] = df['PositionsAnzahl'].astype('Int16')
-
-# Pre-cleaning memory check
-print(f"Memory usage before converting:")
-df.info(memory_usage='deep')
-
-None_placeholder = ["-", "(leer)", "(null)", "wird vergeben", "unbekannter HW", "#unbekannter hw", "Allgemeine Standardbeschreibungen"]
-for placeholder in None_placeholder:
-    df = df.replace(placeholder, pd.NA)
-    df2 = df2.replace(placeholder, pd.NA)
-
-# Replace Typing Errors
-df = df.replace("Betriebsunterbrechnung", "Betriebsunterbrechung")
-df = df.replace("Überpannung Heizung", "Überspannung Heizung")
-df = df.replace("Kfz", "KFZ")
-df = df.replace("Schliessanlagen", "Schließanlagen")
-
-# --- Optimizing Types for DF (Auftragsdaten) ---
-columns_to_convert = ['Land', 'PLZ_SO', 'PLZ_HW', 'PLZ_VN', 'address1_postalcode',
-                       'Schadenart_Name', 'Falltyp_Name', 'Gewerk_Name', 'Kundengruppe',
-                       'Handwerker_Name']
-
-# Convert Object to Category
-df[columns_to_convert] = df[columns_to_convert].astype('category')
-
-# Convert objects to String
-object_columns = df.select_dtypes('object').columns
-df[object_columns] = df[object_columns].astype('string')
-
-# Downcast integers
-int_cols = df.select_dtypes(include=['int64']).columns
-for col in int_cols:
-    df[col] = pd.to_numeric(df[col], downcast='integer')
-
-# Downcast floats
-df_below_four_decimals = df.select_dtypes(include='float') \
-                                    .apply(lambda col: np.isclose(col, col.round(4))) \
-                                    .any() \
-                                    .loc[lambda s: s] \
-                                    .index.tolist()
-df[df_below_four_decimals] = df[df_below_four_decimals].astype('float32')
-
-# --- Optimizing Types for DF2 (Positionsdaten) ---
-df2_columns_to_convert = ['KvaRechnung_ID', 'KvaRechnung_Nummer', 'Mengeneinheit', 'Bemerkung']
-df2[df2_columns_to_convert] = df2[df2_columns_to_convert].astype('category')
-
-object_columns_df2 = df2.select_dtypes('object').columns
-df2[object_columns_df2] = df2[object_columns_df2].astype('string')
-
-df2_below_four_decimals = df2.select_dtypes(include='float') \
-                                    .apply(lambda col: np.isclose(col, col.round(4))) \
-                                    .any() \
-                                    .loc[lambda s: s] \
-                                    .index.tolist()
-df2[df2_below_four_decimals] = df2[df2_below_four_decimals].astype('float32')
-
-# Post-cleaning memory check
-print(f"Memory usage after converting (Ready for DB):")
-df.info(memory_usage='deep')
-df2.info(memory_usage='deep')
-
-# Logic for Discounts/Plausibility
-keywords = ["Rabatt", "Skonto", "Nachlass", "Gutschrift", "Bonus", "Abzug", "Minderung", "Gutschein", "Erlass", "Storno", "Kulanz"]
-pattern = '|'.join(keywords)
-df2['ist_Abzug'] = df2['Bezeichnung'].str.contains(pattern, case=False, regex=True, na=False)
-
-normal_position = (df2['Einigung_Netto'] >= 0) & (df2['ist_Abzug'] == False)
-discount_position = (df2['Einigung_Netto'] < 0) & (df2['ist_Abzug'] == True)
-df2['Plausibel'] = normal_position | discount_position
+df, df2 = dc.data_cleaning(auftragsdaten, positionsdaten, zeitdaten)
 
 
 print("--- Step 3: Building DuckDB Database ---")
