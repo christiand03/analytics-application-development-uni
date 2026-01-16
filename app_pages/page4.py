@@ -76,7 +76,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df=None, is
         dataset_choice = st.radio("Datensatz wählen", ["Auftragsdaten (df1)", "Positionsdaten (df2)"], horizontal=True)
 
         if "Auftragsdaten" in dataset_choice:
-            count_val = fn_count_df1
+            count_val = plausi_count_df1
             avg_val = plausi_avg_df1
             diff_list = plausi_list_df1
             total_rows = total_df1
