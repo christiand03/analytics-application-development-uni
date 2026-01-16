@@ -330,6 +330,7 @@ issues = {
     'count_zeitwert_errors': [len(zeitwert)],
     'count_above_50k': [len(df_above_50k)],
     'count_handwerker_outliers': [len(df_outliers_true)],
+    'count_semantic_outliers': [len(df_semantic)],
     'count_abweichung_summen': [len(df_mismatch)]
 }
 

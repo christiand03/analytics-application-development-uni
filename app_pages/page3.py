@@ -32,9 +32,11 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     # outlier KPI
     outlier_count = len(df_outlier[df_outlier['is_outlier'] == True])
     outlier_share = (outlier_count / row_count * 100)
+    semantic_count = len(df_semantic)
+    semantic_share = (semantic_count / row_count * 100)
 
     # KPI HEADER
-    kpi_cols = st.columns(3)
+    kpi_cols = st.columns(4)
     with kpi_cols[0]:
         st.metric(
             label="Textuelle Auffälligkeiten",
@@ -56,14 +58,22 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
 
     with kpi_cols[2]:
         st.metric(
-            label="Auffällige Gewerk-Zuordnungen",
+            label="Auffällige Gewerk-Zuordnungen (regelbasiert)",
             value=f"{outlier_count:,}".replace(",", "."),
             delta=get_delta("count_handwerker_outliers"), 
             delta_color="inverse",
             help="Anzahl der Aufträge mit auffälligen Handwerker-Gewerk Zuordnungen"
         )
         st.caption(f"Anteil: {outlier_share:.2f}% der Auftragsdaten")
-    
+    with kpi_cols[3]:
+        st.metric(
+            label="Auffällige Gewerk-Zuord. (KI)",
+            value=f"{semantic_count:,}".replace(",", "."),
+            delta=get_delta("count_semantic_outliers"), 
+            delta_color="inverse",
+            help="Anzahl der Aufträge, bei denen Handwerkername und Gewerk semantisch nicht zusammenpassen (KI-Check)"
+        )
+        st.caption(f"Anteil: {semantic_share:.2f}% der Auftragsdaten")    
 
 
     st.markdown("---")
