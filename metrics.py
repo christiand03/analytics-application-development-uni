@@ -522,7 +522,7 @@ def mismatched_entries(df, threshold=0.2, process_batch_size=16384, encode_batch
     
     model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=device)
 
-    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name'])
+    df = df.dropna(subset=['Gewerk_Name', 'Handwerker_Name']).copy()
     gewerk_codes, unique_gewerke = pd.factorize(df['Gewerk_Name'])
     handwerker_codes, unique_handwerker = pd.factorize(df['Handwerker_Name'])
 
@@ -793,8 +793,6 @@ def false_negative_df1(df):
         "KvaRechnung_ID", "Forderung_Netto", "Empfehlung_Netto", "Einigung_Netto"
     ]].copy()
 
-    print(f"Länge DF: {len(details_df)}")
-    print(f"Summe Fehler in Stats: {stats_df['Fehler'].sum()}")
     return stats_df, details_df
 
 
