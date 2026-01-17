@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import duckdb
 import time
 import metrics as mt
@@ -40,14 +39,12 @@ df, df2 = dc.data_cleaning(auftragsdaten, positionsdaten, zeitdaten)
 print("--- Step 3: Building DuckDB Database ---")
 con = duckdb.connect(DB_PATH)
 
-# Store the "Original" Cleaned Data
-print("Saving (Auftragsdaten)...")
-con.execute("CREATE OR REPLACE TABLE auftragsdaten AS SELECT * FROM df")
+# # Store the "Original" Cleaned Data
+# print("Saving (Auftragsdaten)...")
+# con.execute("CREATE OR REPLACE TABLE auftragsdaten AS SELECT * FROM df")
 
-print("Saving (Positionsdaten)...")
-con.execute("CREATE OR REPLACE TABLE positionsdaten AS SELECT * FROM df2")
-
-
+# print("Saving (Positionsdaten)...")
+# con.execute("CREATE OR REPLACE TABLE positionsdaten AS SELECT * FROM df2")
 
 print("--- Step 4: Calculating Scalar Metrics ---")
 
