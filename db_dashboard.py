@@ -93,11 +93,7 @@ def compute_metrics_df2():
 
     plausi_df2 = con.execute("SELECT * FROM metric_plausibility_diffs_positionsdaten").df()
 
-    position_counts_df = con.execute("""
-        SELECT KvaRechnung_ID, COUNT(Position_ID) as PositionsAnzahl 
-        FROM positionsdaten 
-        GROUP BY KvaRechnung_ID
-    """).df()
+    position_counts_df = con.execute("SELECT * FROM metric_position_count_positionsdaten").df()
 
     fn_stats_df2 = con.execute("SELECT * FROM metric_fn_stats_df2").df()
     fn_details_df2 = con.execute("SELECT * FROM metric_fn_details_df2").df()

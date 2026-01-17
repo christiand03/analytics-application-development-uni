@@ -197,6 +197,10 @@ con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM
 #df_semantic = []
 #con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT 'dummy' as col1 WHERE 1=0")
 
+print("14. Calculate Position count")
+position_count_df2 = mt.position_count(df2)
+con.execute("CREATE OR REPLACE TABLE metric_position_count_positionsdaten AS SELECT * FROM position_count_df2")
+
 print("Calculating Extended Chart Data...")
 # page4 Tab 2
 disc_stats, disc_details = mt.discount_details(df2)
