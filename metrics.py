@@ -163,13 +163,6 @@ def count_rows(input_df):
     return count
 
 
-def split_dataframe(input_df, chunks=5):
-    """ Splits the data frame to simulate a time series data.
-        
-        .. deprecated::  Made obsolete by added datetime columns. 
-    """
-    return np.array_split(input_df, chunks)
-
 
 def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
     """Determines ratio of null-values by columns and percentage of rows containing any amount of null values, with optional grouping by a given column.
@@ -224,27 +217,6 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
             grouped_col_ratios = grouped_col_ratios.loc[[specific_group]]
             grouped_row_ratios = grouped_row_ratios.loc[[specific_group]]
         return grouped_row_ratios, grouped_col_ratios
-
-
-
-def groupby_col(input_df, col):
-    """Helper function that groups a DataFrame by the given column.
-
-    Parameters
-    ----------
-    input_df :  pandas.DataFrame
-        DataFrame that is to be evaluated..
-    col : string
-        Identifier of the column to be grouped by.
-
-    Returns
-    -------
-    input_df_grouped: pandas.DataFrame 
-        A grouped DataFrame.
-    """
-    input_df_grouped = input_df.groupby(col,observed=True)
-
-    return input_df_grouped
 
 
 def discount_check(df2):
