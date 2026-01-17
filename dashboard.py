@@ -10,7 +10,7 @@ st.set_page_config(
     page_icon="assets/favicon.png",
     layout="wide"
 )
-
+start_global = time.time()
 @st.cache_data
 def load():
     df = pd.read_parquet("resources/Auftragsdaten_konvertiert")
@@ -80,7 +80,7 @@ def compute_metrics_df1():
         "proforma_belege_df": proforma_df,
         "proforma_belege_count": proforma_count,
         "above_50k_df": mt.above_50k(df),
-        "zeitwert_errors_df": zeitwert_errors_df,
+        "zeitwert_error_df": zeitwert_errors_df,
         "zeitwert_errors_count": len(zeitwert_errors_df),
         "error_frequency_weekday_hour": error_freq_df,
         "false_negative": fn_count_df,
@@ -169,6 +169,85 @@ def compute_positions_over_time():
           f"{round(time.time() - calc_time_start, 2)}s")
     return positions_over_time_df
 
+@st.cache_data
+def compute_issues_df():
+
+    zeitwert = metrics_df1.get("zeitwert_errors_count")
+    df_above_50k = metrics_df1.get("above_50k_df")
+    df_semantic = metrics_df1.get("mismatched_entries")
+    test_data_count = metrics_df1.get("test_kundengruppen_anzahl")
+    df_mismatch = metrics_combined.get("auftraege_abgleich")
+    df_outliers_true = metrics_df1.get("handwerker_gewerke_outlier")
+    plausibility_error_count_df = metrics_df1.get("plausi_forderung_einigung_count")
+    plausibility_error_count_df2 = metrics_df1.get("plausi_forderung_einigung_count")
+    discount_logic_errors = metrics_df2.get("discount_check_errors")
+    proforma_count = metrics_df1.get("proforma_belege_count")
+    fn_details1 = metrics_df1.get("false_negative_details")
+    fn_details2 = metrics_df2.get("false_negative_details")
+    
+    numeric_issues = zeitwert + len(df_above_50k) + len(df_mismatch)
+    text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
+    plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2)
+    overall_issues = numeric_issues + text_issues + plausi_issues
+
+    issues = {
+        'numeric_issues': [numeric_issues],
+        'text_issues': [text_issues],
+        'plausi_issues': [plausi_issues],
+        'overall_issues': [overall_issues],
+        'count_zeitwert_errors': [zeitwert],
+        'count_above_50k': [len(df_above_50k)],
+        'count_handwerker_outliers': [len(df_outliers_true)],
+        'count_semantic_outliers': [len(df_semantic)],
+        'count_abweichung_summen': [len(df_mismatch)],
+        'count_plausibility_errors_df': [plausibility_error_count_df],
+        'count_plausibility_errors_df2': [plausibility_error_count_df2],
+        'count_false_negative_df': [len(fn_details1)],
+        'count_false_negative_df2': [len(fn_details2)],
+    }
+
+    df_issues = pd.DataFrame(issues)
+
+    return df_issues
+
+
+### Static Data to get the dashboard to load (the standard dashboard.py doesnt support the trend analysis) 
+@st.cache_data
+def compute_comparison_metrics():
+    data = {
+    'Metric': [
+        'avg_plausibility_diff_df', 
+        'avg_plausibility_diff_df2', 
+        'count_above_50k', 
+        'count_abweichung_summen', 
+        'count_discount_logic_errors'
+    ],
+    'Current_Value': [
+        1560.530884, 
+        406.184998, 
+        306.000000, 
+        34581.000000, 
+        22110.000000
+    ],
+    'Old_Value': [
+        1560.530884, 
+        406.184998, 
+        306.000000, 
+        34581.000000, 
+        22110.000000
+    ],
+    'Percent_Change': [0.0, 0.0, 0.0, 0.0, 0.0]
+}
+
+    # Define the specific indices from your example
+    indices = [10, 13, 21, 24, 15]
+
+    df = pd.DataFrame(data, index=indices)
+
+    return df
+
+
+
 
 # CSS
 st.markdown("""
@@ -251,52 +330,36 @@ with nav_col2:
     )
 
 
-# SEITEN-ROUTING – Lazy Aufruf der Metriken
-
+# SEITEN-ROUTING 
+metrics_df1 = compute_metrics_df1()
+metrics_df2 = compute_metrics_df2()
+metrics_combined = compute_metrics_combined()
+issues_df = compute_issues_df()
+issues_df = issues_df.iloc[0]
+comparison_df = compute_comparison_metrics()
+print(f"Global data loaded in {round(time.time() - start_global, 2)}s")
 if selected == "Startseite":
-    # Nur hier laden wir die Daten für die Seite (gecached)
     start = time.time()
-    df, df2 = load()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
-    page1.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    pos_time = compute_positions_over_time()
+    page1.show_page(metrics_df1, metrics_df2, metrics_combined, pos_time, comparison_df, issues_df)
     print("page 1 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Numerische Daten":
     start = time.time()
-    df, df2 = load()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
-    page2.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page2.show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df)
     print("page 2 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Textuelle Daten":
-    # Seite ist leer
     start = time.time()
-    df, df2 = load()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
-    page3.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page3.show_page(metrics_df1, metrics_df2, comparison_df, issues_df)
     print("page 3 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Plausibilitätscheck":
     start = time.time()
-    df, df2 = load()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
-    page4.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page4.show_page(metrics_df1, metrics_df2, comparison_df, issues_df)
     print("page 4 render time:", round(time.time() - start, 2), "s")
 
 elif selected == "Data Drift":
-    # Seite ist leer
     start = time.time()
-    df, df2 = load()
-    metrics_df1 = compute_metrics_df1()
-    metrics_df2 = compute_metrics_df2()
-    metrics_combined = compute_metrics_combined()
-    page5.show_page(df, df2, metrics_df1, metrics_df2, metrics_combined)
+    page5.show_page()
     print("page 5 render time:", round(time.time() - start, 2), "s")
