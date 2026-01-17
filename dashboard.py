@@ -23,12 +23,12 @@ def compute_metrics_df1():
     df, _ = load()
 
     calc_time_start = time.time()
-    plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
+    plausi_diff_df, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df)
     print("Calculated plausi_diff_list, plausi_count, plausi_avg in "
           f"{round(time.time() - calc_time_start, 2)}s")
 
     calc_time_start = time.time()
-    zeitwert_errors_series = mt.check_zeitwert(df)
+    zeitwert_errors_df = mt.check_zeitwert(df)
     print("Calculated zeitwert_errors_list in "
           f"{round(time.time() - calc_time_start, 2)}s")
 
@@ -54,9 +54,15 @@ def compute_metrics_df1():
     calc_time_start = time.time()
     df_added = mt.handwerker_gewerke_outlier(df)
     df_true = df_added[df_added['is_outlier'] == True].copy()
-    df_true['Check_Result'] = mt.check_keywords_vectorized(df_true)
+    df_true['Check_Result'] = mt.check_keywords(df_true)
 
     print("Calculated craftsman/craft comparison in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    
+    calc_time_start = time.time()
+    fn_stats_df, fn_details_df = mt.false_negative_df1(df)
+    fn_count_df = fn_stats_df['Fehler'].sum()
+    print("Calculated fn_stats, fn_details in "
           f"{round(time.time() - calc_time_start, 2)}s")
 
     calc_time_start = time.time()
@@ -65,8 +71,8 @@ def compute_metrics_df1():
         "null_ratio_cols": mt.ratio_null_values_column(df),
         "null_ratio_rows": mt.ratio_null_values_rows(df),
         "test_kundengruppen_anzahl": mt.Kundengruppe_containing_test(df),
-        "statistiken_num": mt.allgemeine_statistiken_num(df),
-        "plausi_forderung_einigung_list": plausi_diff_list,
+        "test_data_df": mt.Kundengruppe_containing_test(df, return_frame=True),
+        "plausi_forderung_einigung_df": plausi_diff_df,
         "plausi_forderung_einigung_count": plausi_count,
         "plausi_forderung_einigung_avg_diff": plausi_avg,
         "grouped_col_ratios": grouped_col_ratios_df1,
@@ -74,12 +80,15 @@ def compute_metrics_df1():
         "proforma_belege_df": proforma_df,
         "proforma_belege_count": proforma_count,
         "above_50k_df": mt.above_50k(df),
-        "zeitwert_errors_list": zeitwert_errors_series,
-        "zeitwert_errors_count": zeitwert_errors_series.size,
+        "zeitwert_errors_df": zeitwert_errors_df,
+        "zeitwert_errors_count": len(zeitwert_errors_df),
         "error_frequency_weekday_hour": error_freq_df,
-        "false_negative": mt.false_negative_df(df),
-        #"mismatched_entries": mt.get_mismatched_entries(df), # vorher cuda installieren
+        "false_negative": fn_count_df,
+        "false_negative_stats": fn_stats_df,
+        "false_negative_details": fn_details_df,
+        "mismatched_entries": mt.mismatched_entries(df),
         "handwerker_gewerke_outlier": df_true,
+        "empty_orders_count": mt.empty_orders(df)
     }
     print("Calculated all other metrics for df1 in "
           f"{round(time.time() - calc_time_start, 2)}s")
@@ -94,21 +103,33 @@ def compute_metrics_df2():
     _, df2 = load()
     calc_time_start = time.time()
     
-    plausi_diff_list, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df2)
+    plausi_diff_df, plausi_count, plausi_avg = mt.plausibilitaetscheck_forderung_einigung(df2)
     print("Calculated plausi_diff_list, plausi_count, plausi_avg in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    
+    calc_time_start = time.time()
+    disc_stats, disc_details = mt.discount_details(df2)
+    print("Calculated discount_stats, discount_details in "
+          f"{round(time.time() - calc_time_start, 2)}s")
+    
+    calc_time_start = time.time()
+    fn_stats_df2, fn_details_df2 = mt.false_negative_df2(df2)
+    print("Calculated fn_stats, fn_details in "
           f"{round(time.time() - calc_time_start, 2)}s")
     
     metrics_df2 = {
         "row_count": mt.count_rows(df2),
         "null_ratio_cols": mt.ratio_null_values_column(df2),
         "null_ratio_rows": mt.ratio_null_values_rows(df2),
-        "statistiken_num": mt.allgemeine_statistiken_num(df2),
-        "discount_check_errors": mt.discount_check(df2),
+        "discount_check_errors": mt.discount_check(df2), #
         "position_counts_per_rechnung": mt.position_count(df2),
-        "plausi_forderung_einigung_list": plausi_diff_list,
+        "plausi_forderung_einigung_df2": plausi_diff_df,
         "plausi_forderung_einigung_count": plausi_count,
         "plausi_forderung_einigung_avg_diff": plausi_avg,
-        "false_negative": mt.false_negative_df2(df2)
+        "false_negative_stats": fn_stats_df2,
+        "false_negative_details": fn_details_df2,
+        "discount_stats": disc_stats,
+        "discount_details": disc_details,
     }
     print("Calculated all metrics for df2 in "
           f"{round(time.time() - calc_time_start, 2)}s")
