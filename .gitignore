@@ -8,6 +8,7 @@ resources/Positionsdaten_konvertiert
 __pycache__
 testing.py
 venv/
+.vscode/
 resources/eval_df.html
 resources/eval.html
 resources/dashboard_data.duckdb

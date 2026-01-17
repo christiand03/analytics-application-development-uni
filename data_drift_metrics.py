@@ -1,10 +1,8 @@
 import pandas as pd
-import numpy as np
-from sklearn import datasets
 from evidently import Dataset
 from evidently import DataDefinition
 from evidently import Report
-from evidently.presets import DataDriftPreset, DataSummaryPreset
+from evidently.presets import DataDriftPreset
 
 # Schema für Auftragsdatenset, nur aufgeführte Spalten werden geprüft   
 schema_df = DataDefinition(
