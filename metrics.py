@@ -11,7 +11,7 @@ def load_data():
 
 # wird nur wiederverwendet
 def ratio_null_values_column(input_df):
-    """Helper function that calculates the null-value-ratios for each column of the supplied DataFrame. 
+    """Helper function that calculates the null-value-ratios (in percent) for each column of the supplied DataFrame. 
 
     Parameters
     ----------
@@ -36,14 +36,14 @@ def ratio_null_values_column(input_df):
 
 # wird nur wiederverwendet
 def ratio_null_values_rows(input_df, exclude_cols=None):
-    """Helper function that calculates the ratio of rows containing null values in all / only chosen columns to total number of rows.  
+    """Helper function that calculates the ratio of rows containing null values in all columns to total number of rows.
     
     Parameters
     ----------
     input_df : pandas.DataFrame
         DataFrame that is to be evaluated.
-    relevant_columns : list, optional
-        List of column identifiers; function will only evaluate these columns, by default None.
+    exclude_columns : list, optional
+        List of column identifiers; these columns will be pruned from calculations, by default None.
 
     Returns
     -------
@@ -65,14 +65,14 @@ def ratio_null_values_rows(input_df, exclude_cols=None):
     return row_ratio
 
 def Kundengruppe_containing_test(df, return_frame=False):
-    """Determines the number of rows in the 'Auftragsdaten' data set that are part of a test data set. Optionally returns a data frame with all relevant instances. A row is conidered test data, if the entry in 'Kundengruppe' is named accordingly.
+    """Determines the number of rows in the 'Auftragsdaten' data set that are suspected to be part of a test data set. Optionally returns a data frame with all relevant instances. A row is conidered test data if the entry in 'Kundengruppe' is named accordingly.
 
     Parameters
     ----------
     df : pandas.DataFrame
         'Auftragsdaten'-DataFrame that is to be evaluated.
     return_frame : bool, optional
-        If True, this function returns a DataFrame with all found test data, by default False
+        If True, this function returns exclusively a DataFrame with all found test data, by default False
 
     Returns
     -------
@@ -90,7 +90,7 @@ def Kundengruppe_containing_test(df, return_frame=False):
 
 
 def plausibilitaetscheck_forderung_einigung(input_df):
-    """Checks for diff between Einigung_Netto and Forderung_Netto for all rows in the given dataframe. Einigung > Forderung is assumed as significant error.
+    """Checks for diff between Einigung_Netto and Forderung_Netto for all rows in the given dataframe. Cases with Einigung > Forderung are cosidered faulty.
 
         Paramters
         ---------
@@ -100,7 +100,7 @@ def plausibilitaetscheck_forderung_einigung(input_df):
         Returns
         -------        
         results: pandas.DataFrame
-            a DataFrame of all differences > 0 as float values alongside their ID and Forderung_Netto and Einigung_Netto 
+            a DataFrame of all differences > 0 as float values alongside their ID, Forderung_Netto and Einigung_Netto 
         count: int  
             total number of rows with difference >0
         avg: float
@@ -165,16 +165,16 @@ def count_rows(input_df):
 
 
 def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
-    """Determines ratio of null-values by columns and percentage of rows containing any amount of null values, with optional grouping by a given column.
+    """Determines ratio of null-values by columns and percentage of rows containing any amount of null values, with optional grouping by a given column. Also supports filtering down to ratio for a single group of interest.
 
     Parameters
     ----------
     input_df : pandas.DataFrame
         DataFrame that is to be evaluated.
     group_by_col: string, optional
-        Column identifier for grouping
+        Column identifier for grouping, default = 'Kundengruppe'
     specific_group: string, optional
-        Passes a group entry to filter the result by, if any   
+        Passes a group entry to filter the result by, if any. Default = None   
 
     Returns
     -------
@@ -220,7 +220,7 @@ def data_cleanliness(input_df,group_by_col="Kundengruppe", specific_group=None):
 
 
 def discount_check(df2):
-    """Checks if a row in the 'Positionsdaten' data set does/doesn't describe a discount or similar and if the 'Einigung_Netto' and 'Forderung_Netto' information accurately reflects this (negative or positive values). 
+    """Checks if a row in the 'Positionsdaten' data set does/doesn't describe a discount or similar and if the 'Einigung_Netto' and 'Forderung_Netto' information accurately reflects this (negative or positive values). References values in the 'Plausibel' column, which is calculated during database creation (see build_db.py). 
     
     Parameters
     ----------
@@ -242,7 +242,7 @@ def discount_check(df2):
 
 
 def proformabelege(df):
-    """Function that checks for pro forma receipts in the 'Auftragsdaten' data set. 
+    """Function that checks for pro-forma receipts in the 'Auftragsdaten' data set. 
 
     Parameters
     ----------
@@ -252,7 +252,7 @@ def proformabelege(df):
     Returns
     -------
     proforma: pandas.DataFrame
-        DataFrame containing all found pro forma receipt rows
+        DataFrame containing all found pro-forma receipt rows
     proforma_count: int
         Amount of found receipts    
     """
@@ -288,10 +288,14 @@ def empty_orders(df):
     Returns
     -------
     empty_orders: int
-          Total amount of orders that do not have any positions associated with them.
+        Total amount of orders that do not have any positions associated with them.
+    empty_order_df: pandas.DateFrame
+        DataFrame containing all empty orders.
+
     """
-    empty_orders = df['PositionsAnzahl'].isna().sum()
-    return empty_orders
+    empty_orders_df = df[df['PositionsAnzahl'].isna()]
+    empty_orders = len(empty_orders_df)
+    return empty_orders, empty_orders_df
 
 
 
@@ -557,6 +561,25 @@ def mismatched_entries(df, threshold=0.2, process_batch_size=16384, encode_batch
     return mismatches
 
 def handwerker_gewerke_outlier(df):
+    """Determines which companies are on record with an unusual trade entry.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        'Auftragsdaten'-DataFrame
+
+    Returns
+    -------
+    stats: pandas.DataFrame
+        DataFrame containing:
+        - 'Handwerker_Name': string, company name
+        - 'Gerwerk_Name': string, associated trades
+        - 'count': int, amount of observed instances of trade-company combination
+        - 'total_count': int, total amount of observations (per company)
+        - 'ratio': float, count/total_count (per company)
+        - 'anzahl_gewerke': int, absolute amount of trades (per company)  
+        - 'is_outlier': bool, True for more than 1 trade, ratio < 0.2
+    """
     df = df[["Handwerker_Name", "Gewerk_Name"]]
     df = df.dropna()
     stats = df.groupby(['Handwerker_Name', 'Gewerk_Name'], observed=True).size().reset_index(name='count')
@@ -572,7 +595,21 @@ def handwerker_gewerke_outlier(df):
     return stats
 
 def check_keywords(df):
+    """This metrics tries to check if an observed company-trade combination is valid by checking the company name for relation to a given trade.
 
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing orders; company and trade information
+
+    Returns
+    -------
+    numpy.ndarray
+        An array with length of df, with each element being one of the following strings:
+        - "CONFIRMED_BY_NAME" : trade coheres with company name
+        - "CONFLICT_WITH_<TRADE>": trade is not confirmed by company name
+        - "NO_KEYWORD_INFO": keyword n/a
+    """
     keywords_mapping = {
     'Heizung- und Sanitärinstallation': ['heizung', 'sanitär', 'bad', 'gas', 'wasser', 'hls', 'wärme', 'installateur', 'haustechnik', 'therme', 'leckage'],
     'Metallbau- und Schlosserarbeiten': ['metall', 'schlosser', 'stahlbau', 'schweiß', 'schmiede', 'konstruktion', 'edelstahl'],
@@ -704,6 +741,7 @@ def abgleich_auftraege(df1, df2):
         - 'Kva_RechnungID': ID des betroffenen Auftrags.
         - 'Diff_Forderung': Differenzbetrag (Wert in df1 - Summe in df2).
         - 'Diff_Einigung': Differenzbetrag (Wert in df1 - Summe in df2).
+        - 'CRMEingangszeit': Zeitstempel des Auftrags
         
         Ist die Differenz positiv, ist der Wert im Auftrag höher als die Summe der Positionen.
     """
@@ -731,7 +769,7 @@ def abgleich_auftraege(df1, df2):
 
 
 def false_negative_df1(df):
-    """Calculates detailed statistics and specific error instances for the 'Tripel-Vorzeichen' check in 'Auftragsdaten'.
+    """Calculates detailed statistics and specific error instances for singular sign errors in the column tuple ('Einigung', 'Empfehlung', 'Forderung') in 'Auftragsdaten'. Can not accurately detect multiple combined errors
 
     Parameters
     ----------
@@ -743,7 +781,7 @@ def false_negative_df1(df):
     stats_df: pandas.DataFrame
         Small DataFrame containing error counts per column (Einigung, Empfehlung, Forderung) for visualization.
     details_df: pandas.DataFrame
-        DataFrame containing the top 500 most severe error instances.
+        DataFrame containing the error instances.
     """
     m_ein = (df['Einigung_Netto'] < 0)
     m_emp = (df["Empfehlung_Netto"] < 0)
