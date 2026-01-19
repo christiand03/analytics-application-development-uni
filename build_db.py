@@ -51,7 +51,7 @@ print("--- Step 4: Calculating Scalar Metrics ---")
 # --- 1. General Counts ---
 total_orders = mt.count_rows(df)
 total_positions = mt.count_rows(df2)
-empty_orders_count = mt.empty_orders(df)
+empty_orders_count, empty_orders_df = mt.empty_orders(df)
 
 # --- 2. Data Quality (Nulls & Uniqueness) ---
 # returns: (float, DataFrame) -> ignore the Dataframe (_)
@@ -200,6 +200,9 @@ con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM
 print("14. Calculate Position count")
 position_count_df2 = mt.position_count(df2)
 con.execute("CREATE OR REPLACE TABLE metric_position_count_positionsdaten AS SELECT * FROM position_count_df2")
+
+print("15. Empty Orders Details")
+con.execute("CREATE OR REPLACE TABLE metric_empty_orders_dataframe AS SELECT * FROM empty_orders_df")
 
 print("Calculating Extended Chart Data...")
 # page4 Tab 2
