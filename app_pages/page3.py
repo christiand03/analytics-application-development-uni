@@ -79,7 +79,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
     st.markdown("---")
 
     # ZEITVERLAUF DIAGRAMM (MIT RAW DATA VIEW)
-    st.subheader("Fehlerverlauf im Vergleich:")
+    st.subheader("Fehlerverlauf im Vergleich")
     st.caption("Dieses Diagramm zeigt den Verlauf der ausgewählten Fehlerkategorien über den gewählten Zeitraum. Aktuell können nur Testdatensätze visualisiert werden.")
 
     def prepare_trend_data(df, label, time_col="CRMEingangszeit"):

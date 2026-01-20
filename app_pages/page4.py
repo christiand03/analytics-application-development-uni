@@ -48,6 +48,10 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
     plausi_issue = issues_df["plausi_issues"] if issues_df is not None else 0
     anteil_plausi_issues = (plausi_issue / (total_df1 + total_df2)) * 100 if (total_df1 + total_df2) > 0 else 0
 
+    empty_orders_df = metrics_df1.get("empty_orders_df")
+    empty_orders = metrics_df1.get("empty_orders_count", 0)
+    outliers_by_damage = metrics_df1.get("outliers_by_damage")
+
     st.markdown("### Plausibilitäts-Checks & Logikfehler")
     kpi_cols = st.columns(1)
     with kpi_cols[0]:
@@ -60,19 +64,21 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
         )
         st.caption(f"Anteil: {anteil_plausi_issues:.2f}% an beiden Datensätzen")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "Logikfehler: Forderung < Einigung",
         "Rabatt/Vorzeichen",
         "Proforma-Belege",
         "Validierung der Vorzeichenlogik (Auftrag)",
         "Validierung der Vorzeichenlogik (Position)",
+        "Aufträge ohne Positionen",
+        "Ausreißer in der Forderungssumme"
     ])
 
     with tab1:
         st.subheader("Logikfehler: Forderung < Einigung")
         st.caption("Fälle, in denen Forderung_Netto kleiner als Einigung_Netto ist")
 
-        dataset_choice = st.radio("Datensatz wählen", ["Auftragsdaten (df1)", "Positionsdaten (df2)"], horizontal=True)
+        dataset_choice = st.radio("Datensatz wählen", ["Auftragsdaten", "Positionsdaten"], horizontal=True)
 
         if "Auftragsdaten" in dataset_choice:
             count_val = plausi_count_df1
@@ -269,5 +275,27 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
                     file_name="konsistenz_fehler_details.csv",
                     mime="text/csv",
                 )
+    
+    with tab6:
+        st.subheader("Detailansicht für die Aufträge ohne Positionen")
+        st.metric(label="Aufträge ohne Pos.", value=f"{empty_orders:,}".replace(",", "."), help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer).", delta=get_delta("count_empty_orders"),delta_color="inverse")
+        selected_types = st.multiselect(
+        "Nach Schadensart filtern:",
+        options= empty_orders_df["Schadenart_Name"].unique(),
+        default=None,
+        key="schadenart_multiselect"
+    )
+        st.dataframe(empty_orders_df[empty_orders_df["Schadenart_Name"].isin(selected_types)] if selected_types else empty_orders_df)
+
+    with tab7:
+        st.subheader("Ausreißer in der Forderungssumme")
+        selected_kundengruppe = st.multiselect(
+        "Nach Kundengruppe filtern:",
+        options= outliers_by_damage["Kundengruppe"].unique(),
+        default=None,
+        key="kundengruppe_multiselect"
+    )
+        st.dataframe(outliers_by_damage[outliers_by_damage["Kundengruppe"].isin(selected_kundengruppe)] if selected_kundengruppe else outliers_by_damage)
+        st.caption("Gibt die Aufträge aus deren Forderungssumme gruppiert nach Schadensart im 1. oder 99. Perzentil sind.")
 
     st.markdown("---")

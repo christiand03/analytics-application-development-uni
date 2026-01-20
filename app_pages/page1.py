@@ -43,12 +43,12 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
     with kpi_cols[4]:
         st.metric(label="Null-Anteil (Positionsdaten)", value=f"{null_rows_df2:.2f}%", help="Anteil der Zeilen mit mindestens einem Nullwert (außer Bezeichnung) in Positionsdaten.", delta=get_delta("null_row_ratio_positions"), delta_color="inverse")
     with kpi_cols[5]:
-        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
+        st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €. Details sind unter Plausibilitätscheck.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
     with kpi_cols[6]:
         st.metric(
             label="Aufträge ohne Pos.",
             value=f"{empty_orders:,}".replace(",", "."),
-            help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer).",
+            help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer). Details sind unter Plausibilitätscheck.",
             delta=get_delta("count_empty_orders"),
             delta_color="inverse"
         )

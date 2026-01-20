@@ -53,6 +53,10 @@ def compute_metrics_df1():
     fn_count_df = fn_stats_df1['Fehler'].sum()
     semantic_mismatches = con.execute("SELECT * FROM metric_semantic_mismatches").df()
 
+    empty_orders_df = con.execute("SELECT * FROM metric_empty_orders_dataframe").df()
+    
+    outliers_by_damage = con.execute("SELECT * FROM metric_outliers_by_damage").df()
+
 
     metrics_df1 = {
         "row_count": scalars['count_total_orders'],
@@ -76,7 +80,9 @@ def compute_metrics_df1():
         "false_negative_stats": fn_stats_df1,
         "false_negative_details": fn_details_df1,
         "empty_orders_count": scalars['count_empty_orders'],
-        "mismatched_entries": semantic_mismatches
+        "mismatched_entries": semantic_mismatches,
+        "empty_orders_df": empty_orders_df,
+        "outliers_by_damage": outliers_by_damage
     }
     
     print(f"Loaded metrics for df1 in {round(time.time() - start_time, 2)}s")

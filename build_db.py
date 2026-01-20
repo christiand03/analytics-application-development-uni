@@ -204,6 +204,10 @@ con.execute("CREATE OR REPLACE TABLE metric_position_count_positionsdaten AS SEL
 print("15. Empty Orders Details")
 con.execute("CREATE OR REPLACE TABLE metric_empty_orders_dataframe AS SELECT * FROM empty_orders_df")
 
+print("16. Outliers by Damage")
+outliers_by_damage = mt.outliers_by_damage(df)
+con.execute("CREATE OR REPLACE TABLE metric_outliers_by_damage AS SELECT * FROM outliers_by_damage")
+
 print("Calculating Extended Chart Data...")
 # page4 Tab 2
 disc_stats, disc_details = mt.discount_details(df2)
@@ -223,7 +227,7 @@ con.execute("CREATE OR REPLACE TABLE metric_fn_details_df2 AS SELECT * FROM fn_d
 print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
 text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
-plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2)
+plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2) + empty_orders_count + len(outliers_by_damage)
 overall_issues = numeric_issues + text_issues + plausi_issues
 
 issues = {
