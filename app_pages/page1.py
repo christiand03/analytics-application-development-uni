@@ -28,6 +28,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
     empty_orders = metrics_df1.get("empty_orders_count", 0)
 
     kva_unique = metrics_combined.get("kvarechnung_id_is_unique", None)
+    kva_nr_land_unique = metrics_combined.get("kvarechnung_nummer_land_is_unique", None)
     pos_unique = metrics_combined.get("position_id_is_unique", None)
 
     total_issues = issues_df["overall_issues"] if issues_df is not None else 0
@@ -53,13 +54,37 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
             delta_color="inverse"
         )
     with kpi_cols[7]:
-        uniq_text = (
-            "OK" if (kva_unique is True and pos_unique is True) else
-            ("KVA ok, Pos. nicht" if (kva_unique is True and pos_unique is False) else
-             ("KVA nicht, Pos. ok" if (kva_unique is False and pos_unique is True) else
-              ("n/v" if (kva_unique is None or pos_unique is None) else "beide nicht")))
+        status_list = []
+        if kva_unique is False:
+            status_list.append("KVA-ID")
+
+        if kva_nr_land_unique is False:
+            status_list.append("KVR-Land")
+
+        if pos_unique is False:
+            status_list.append("Pos-ID")
+
+        if not status_list:
+            if kva_unique is None or pos_unique is None:
+                uniq_text = "n/v"
+            else:
+                uniq_text = "OK"
+        else:
+            uniq_text = ", ".join(status_list) + " nicht"
+
+            # 3. Tooltip anpassen
+        tooltip = (
+            "Prüft Einzigartigkeit von:\n"
+            "- KvaRechnung_ID (Auftragsdaten)\n"
+            "- KvaRechnung_Nummer pro Land (Auftragsdaten)\n"
+            "- Position_ID (Positionsdaten)"
         )
-        st.metric(label="Eindeutigkeit IDs", value=uniq_text, help="Prüft Einzigartigkeit von KvaRechnung_ID (Auftragsdaten) und Position_ID (Positionsdaten).")
+
+        st.metric(
+            label="Eindeutigkeit IDs",
+            value=uniq_text,
+            help=tooltip
+        )
 
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 

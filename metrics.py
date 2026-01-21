@@ -141,9 +141,15 @@ def uniqueness_check(df, df2):
         True if column is unique.
     """
     kvarechnung_id_is_unique = df['KvaRechnung_ID'].is_unique
+    kvarechnung_nummer_land_is_unique = None
+    if 'Land' in df.columns and 'KvaRechnung_Nummer' in df.columns:
+        tmp = df[['Land', 'KvaRechnung_Nummer']].dropna()
+        if not tmp.empty:
+            is_duplicated = tmp.duplicated(subset=['Land', 'KvaRechnung_Nummer']).any()
+            kvarechnung_nummer_land_is_unique = not is_duplicated
     position_id_is_unique = df2['Position_ID'].is_unique
 
-    return kvarechnung_id_is_unique, position_id_is_unique
+    return kvarechnung_id_is_unique, kvarechnung_nummer_land_is_unique, position_id_is_unique
 
 
 def count_rows(input_df):

@@ -57,7 +57,7 @@ empty_orders_count, empty_orders_df = mt.empty_orders(df)
 # returns: (float, DataFrame) -> ignore the Dataframe (_)
 null_ratio_orders, _ = mt.data_cleanliness(df, group_by_col=None)
 null_ratio_positions, _ = mt.data_cleanliness(df2, group_by_col=None)
-unique_kva, unique_pos = mt.uniqueness_check(df, df2)
+unique_kva, unique_kva_nr_land, unique_pos = mt.uniqueness_check(df, df2)
 
 # --- 3. Business Logic / Test Data ---
 test_data_count = mt.Kundengruppe_containing_test(df, return_frame=False)
@@ -87,6 +87,7 @@ kpi_data = {
     'null_row_ratio_orders': [null_ratio_orders],
     'null_row_ratio_positions': [null_ratio_positions],
     'is_unique_kva_id': [unique_kva],
+    'is_unique_kva_nr_per_land': [unique_kva_nr_land],
     'is_unique_position_id': [unique_pos],
 
     # Test Data

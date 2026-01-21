@@ -138,6 +138,7 @@ def compute_metrics_combined():
 
     metrics_combined = {
         "kvarechnung_id_is_unique": bool(scalars['is_unique_kva_id']),
+        "kvarechnung_nummer_land_is_unique": bool(scalars['is_unique_kva_nr_per_land']),
         "position_id_is_unique": bool(scalars['is_unique_position_id']),
         "auftraege_abgleich": auftraege_abgleich_df
     }
