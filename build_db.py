@@ -5,6 +5,10 @@ import metrics as mt
 import os
 import data_cleaning as dc
 
+""" 
+This script builds a duckdb database from the cleaned Auftrags- and Positionsdaten data sets.
+Additionally to the 'raw' data all metrics (if feasible) are precomputed and saved to be easily and performantly accessible by the dashboard application. 
+"""    
 DB_DIR = "resources"
 DB_NAME = "dashboard_data.duckdb"
 DB_OLD_NAME = "dashboard_data_old.duckdb"
@@ -12,6 +16,7 @@ DB_OLD_NAME = "dashboard_data_old.duckdb"
 DB_PATH = os.path.join(DB_DIR, DB_NAME)
 DB_OLD_PATH = os.path.join(DB_DIR, DB_OLD_NAME)
 
+#Versioning of old databases: one old version is kept and rotated on re-run
 print("--- Step 0: Database Rotation ---")
 if os.path.exists(DB_OLD_PATH):
     try:
@@ -27,15 +32,18 @@ if os.path.exists(DB_PATH):
     except PermissionError:
         print(f"WARNING: Could not move {DB_PATH}. File might be open?")
 
+# Initialize timer for script performance measurement/feedback 
 start_time = time.time()
 
-print("--- Step 1: Loading Data ---")
+#raw data is loaded from (parquet) files defined in the data_cleaning module
+print("--- Step 1: Loading Data ---") 
 auftragsdaten, positionsdaten, zeitdaten = dc.load_data()
 
+#raw data is prepared (details in data_cleaning)
 print("--- Step 2: Merging & Cleaning ---")
 df, df2 = dc.data_cleaning(auftragsdaten, positionsdaten, zeitdaten)
 
-
+#Establish connection to (as of yet empty) data base
 print("--- Step 3: Building DuckDB Database ---")
 con = duckdb.connect(DB_PATH)
 
@@ -46,7 +54,7 @@ con.execute("CREATE OR REPLACE TABLE auftragsdaten AS SELECT * FROM df")
 print("Saving (Positionsdaten)...")
 con.execute("CREATE OR REPLACE TABLE positionsdaten AS SELECT * FROM df2")
 
-print("--- Step 4: Calculating Scalar Metrics ---")
+print("--- Step 4: Calculating Scalar Metrics ---") 
 
 # --- 1. General Counts ---
 total_orders = mt.count_rows(df)
@@ -76,7 +84,7 @@ discount_logic_errors = mt.discount_check(df2)
 
 
 print("--- Step 5: Constructing Scalar Metrics Table ---")
-
+#aggregating of all scalar metrics computed in step 4 into a handy format for conversion to database table 
 kpi_data = {
     # General
     'count_total_orders': [total_orders],
@@ -106,7 +114,6 @@ df_scalars = pd.DataFrame(kpi_data)
 
 print("--- Step 6: Saving to DuckDB ---")
 con.execute("CREATE OR REPLACE TABLE scalar_metrics AS SELECT * FROM df_scalars")
-
 
 
 print("--- Step 7: Computing Complex Metrics and Creating Tables ---")
@@ -194,7 +201,7 @@ print("13. Semantic Handwerker Mismatches")
 df_semantic = mt.mismatched_entries(df)
 con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT * FROM df_semantic")
 
-# Optional: Leere Tabelle in DB anlegen, falls mt.get_mismatched_entries(df) nicht ausgeführt werden kann
+# Optional: Leere Tabelle in DB anlegen, falls mt.get_mismatched_entries(df) nicht ausgeführt werden kann (wenn dependencies oder ressourcen für classifer nicht gegeben)
 #df_semantic = []
 #con.execute("CREATE OR REPLACE TABLE metric_semantic_mismatches AS SELECT 'dummy' as col1 WHERE 1=0")
 
@@ -302,6 +309,7 @@ df_comparison['Old_Value'] = pd.to_numeric(df_comparison['Old_Value'], errors='c
 
 df_comparison['Absolute_Change'] = df_comparison['Current_Value'] - df_comparison['Old_Value']
 
+#Helper function for percentage difference
 def calc_percent(row):
     old = row['Old_Value']
     new = row['Current_Value']

@@ -4,14 +4,16 @@ import duckdb
 from streamlit_option_menu import option_menu
 from app_pages import page1, page2, page3, page4, page5
 
-start_global = time.time()
+start_global = time.time() #Timer zur Performancemessung des Dashboards
+
+#Titel & Layout Startseite
 st.set_page_config(
     page_title="Data Quality Dashboard",
     page_icon="assets/favicon.png",
     layout="wide"
 )
 
-@st.cache_resource
+@st.cache_resource #lade duckdb-Verbindung als permanente Ressource
 def get_db_connection():
     """Establishes a read-only connection to the DuckDB database."""
     DB_PATH = "resources/dashboard_data.duckdb"
@@ -20,7 +22,7 @@ def get_db_connection():
 
 
 @st.cache_data
-def compute_metrics_df1():
+def compute_metrics_df1(): # Vorberechnete Daten für Auftragsdaten werden aus duckdb geladen und einmalig gecached (Rohdaten werden nicht vorgehalten)
     print("Loading metrics for df1 (Auftragsdaten) from DB...")
     start_time = time.time()
 
@@ -90,7 +92,7 @@ def compute_metrics_df1():
 
 
 @st.cache_data
-def compute_metrics_df2():
+def compute_metrics_df2(): # Analog für alle Metriken zu Positionsdaten
     print("Loading metrics for df2 (Positionsdaten) from DB...")
     start_time = time.time()
     
@@ -128,7 +130,7 @@ def compute_metrics_df2():
 
 
 @st.cache_data
-def compute_metrics_combined():
+def compute_metrics_combined(): #Analog für alle Metriken über beide Datensets
     print("Loading combined metrics from DB...")
     start_time = time.time()
     
@@ -148,7 +150,7 @@ def compute_metrics_combined():
 
 
 @st.cache_data
-def compute_positions_over_time():
+def compute_positions_over_time(): 
     print("Loading positions per order over time from DB...")
     start_time = time.time()
     con = get_db_connection()
@@ -259,6 +261,7 @@ with nav_col2:
 
 
 # PAGE ROUTING
+# data frames zur Weitergabe an page-module 
 metrics_df1 = compute_metrics_df1()
 metrics_df2 = compute_metrics_df2()
 metrics_combined = compute_metrics_combined()
