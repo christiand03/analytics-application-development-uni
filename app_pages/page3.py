@@ -3,6 +3,43 @@ import pandas as pd
 import altair as alt
 
 def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
+    """This function renders page 3 of 5 of the dashboard. 
+    
+    Page 3 visualizes metrics concerning the data quality of textual column data.
+    For a detailed list, refer to the 'Notes' section.
+
+    Parameters
+    ----------
+    metrics_df1 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order data only
+    metrics_df2 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning position data only
+    metrics_combined : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order and position data
+    comparison_df : pandas.DataFrame
+        DataFrame with metric value changes over time
+    issues_df : bool
+        DataFrame containing values for all metrics concerning potentially invalid data points
+    Returns
+    -------
+    void
+
+    Notes
+    -----
+    This page contains the following information:
+    
+    - KPIs
+        - aggregated errors and inconsistencies in textual data
+        - amount of test data in production data sets
+        - amount of suspicious trade-company associations (heuristic-based) 
+        - amount of suspicious trade-company associations (semantic-classification-based)
+    - Charts
+        - detail view of trends over time for all error types
+        - detail view for outlier trade-company associations
+            - heuristic-based
+            - semantic classification       
+
+    """
 
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
@@ -216,7 +253,8 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
     st.caption("Diese Analyse identifiziert Handwerker und Gewerke, bei den auffällig viele Zuordnungsfehler auftreten. (Der Namensabgleich prüft, ob der Handwerkername auf das Gewerk hinweist)")
 
     tab1, tab2 = st.tabs(['Regelbasiert', 'Semantisch'])
-
+    
+    #regelabsierter Abgleich
     with tab1:
         if df_outlier is not None and not df_outlier.empty:
 
@@ -298,7 +336,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
 
         else:
             st.success("Keine statistischen Auffälligkeiten in den Daten gefunden.")
-
+    #semantischer Abgleich   
     with tab2:
         if df_outlier is not None and not df_outlier.empty:
 

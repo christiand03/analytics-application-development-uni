@@ -22,11 +22,12 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
         DataFrame containing values for all metrics concerning potentially invalid data points
     Returns
     -------
-    void
-        _description_
+    void        
 
     Notes
     -----
+    This page contains the following information:
+    
     - KPIs
         - numerical anomalies, total count and ratio
         - errors in 'current value' data , ratio to orders
