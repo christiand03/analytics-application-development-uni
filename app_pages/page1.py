@@ -17,7 +17,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
         return None
     
 
-    # --- KPI-BEREICH (6 Kacheln) ---
+    # --- KPI-BEREICH ---
     kpi_cols = st.columns(8)
 
     row_count_df1 = metrics_df1.get("row_count", pd.NA)
@@ -46,43 +46,24 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
     with kpi_cols[5]:
         st.metric(label="Proforma‑Belege", value=f"{proforma_count:,}".replace(",", "."), help="Anzahl Aufträge mit Einigung_Netto zwischen 0,01 und 1 €. Details sind unter Plausibilitätscheck.", delta=get_delta("count_proforma_receipts"), delta_color="inverse")
     with kpi_cols[6]:
-        st.metric(
-            label="Aufträge ohne Pos.",
-            value=f"{empty_orders:,}".replace(",", "."),
-            help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer). Details sind unter Plausibilitätscheck.",
-            delta=get_delta("count_empty_orders"),
-            delta_color="inverse"
-        )
+        st.metric(label="Aufträge ohne Pos.", value=f"{empty_orders:,}".replace(",", "."), help="Anzahl der Aufträge, denen keine Positionen zugeordnet sind (PositionsAnzahl ist leer). Details sind unter Plausibilitätscheck.", delta=get_delta("count_empty_orders"), delta_color="inverse")
     with kpi_cols[7]:
-        status_list = []
-        if kva_unique is False:
-            status_list.append("KVA-ID")
-
-        if kva_nr_land_unique is False:
-            status_list.append("KVR-Land")
-
-        if pos_unique is False:
-            status_list.append("Pos-ID")
-
-        if not status_list:
-            if kva_unique is None or pos_unique is None:
-                uniq_text = "n/v"
-            else:
-                uniq_text = "OK"
+        if kva_unique and kva_nr_land_unique and pos_unique:
+            text = "True"
         else:
-            uniq_text = ", ".join(status_list) + " nicht"
+            text = "False"
 
-            # 3. Tooltip anpassen
+
         tooltip = (
             "Prüft Einzigartigkeit von:\n"
-            "- KvaRechnung_ID (Auftragsdaten)\n"
-            "- KvaRechnung_Nummer pro Land (Auftragsdaten)\n"
-            "- Position_ID (Positionsdaten)"
+            f"- ({kva_unique}) KvaRechnung_ID (Auftragsdaten)\n"
+            f"- ({kva_nr_land_unique}) KvaRechnung_Nummer pro Land (Auftragsdaten)\n"
+            f"- ({pos_unique}) Position_ID (Positionsdaten)"
         )
 
         st.metric(
             label="Eindeutigkeit IDs",
-            value=uniq_text,
+            value=text,
             help=tooltip
         )
 

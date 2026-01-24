@@ -65,7 +65,8 @@ empty_orders_count, empty_orders_df = mt.empty_orders(df)
 # returns: (float, DataFrame) -> ignore the Dataframe (_)
 null_ratio_orders, _ = mt.data_cleanliness(df, group_by_col=None)
 null_ratio_positions, _ = mt.data_cleanliness(df2, group_by_col=None)
-unique_kva, unique_kva_nr_land, unique_pos = mt.uniqueness_check(df, df2)
+# returns: (boolean, DataFrame) -> Dataframe could be added to dashboard if wanted
+unique_kva, unique_pos, unique_kva_nr_land, df_uniq_problem = mt.uniqueness_check(df, df2)
 
 # --- 3. Business Logic / Test Data ---
 test_data_count = mt.Kundengruppe_containing_test(df, return_frame=False)
@@ -236,7 +237,7 @@ print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
 text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
 plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2) + empty_orders_count + len(outliers_by_damage)
-overall_issues = numeric_issues + text_issues + plausi_issues
+overall_issues = numeric_issues + text_issues + plausi_issues + len(df_uniq_problem)
 
 issues = {
     'numeric_issues': [numeric_issues],
@@ -253,7 +254,7 @@ issues = {
     'count_false_negative_df': [len(fn_details1)],
     'count_false_negative_df2': [len(fn_details2)],
 }
-
+# The values from count_zeitwert_errors to count_false_negative_df2 are stored here due to practicality. They are used for the Trend Analysis
 df_issues = pd.DataFrame(issues)
 print(df_issues)
 con.execute("CREATE OR REPLACE TABLE issues AS SELECT * FROM df_issues")

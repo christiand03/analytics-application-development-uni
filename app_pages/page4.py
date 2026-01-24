@@ -162,7 +162,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
             st.success("Keine Auffälligkeiten in diesem Datensatz gefunden.")
 
     with tab2:
-        st.subheader("Rabatt-Logik & Vorzeichen")
+        st.subheader("Rabatt-Logik & Vorzeichenprüfung")
         st.caption("Fälle, in denen Rabatte unplausibel sind. (Rabatte werden anhand von Keywords erkannt) Vorzeichen-Checks nur bei Einigung_netto.")
         c1, c2 = st.columns(2)
         c1.metric("Unplausible Positionen", value=f"{discount_errors:,}".replace(",", "."), delta=get_delta("count_discount_logic_errors"), delta_color="inverse", help="Anzahl der Positionen mit unplausiblen Rabatten")
