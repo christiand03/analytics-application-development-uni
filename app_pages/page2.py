@@ -3,7 +3,43 @@ import pandas as pd
 import altair as alt
 
 def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_df):
+    """This function renders page 2 of 5 of the dashboard. 
+    
+    Page 2 visualizes metrics concerning the data quality of numeric column data.
+    For a detailed list, refer to the 'Notes' section.
 
+    Parameters
+    ----------
+    metrics_df1 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order data only
+    metrics_df2 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning position data only
+    metrics_combined : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order and position data
+    comparison_df : pandas.DataFrame
+        DataFrame with metric value changes over time
+    issues_df : bool
+        DataFrame containing values for all metrics concerning potentially invalid data points
+    Returns
+    -------
+    void
+        _description_
+
+    Notes
+    -----
+    - KPIs
+        - numerical anomalies, total count and ratio
+        - errors in 'current value' data , ratio to orders
+        - count of orders valued over 50k
+        - check if order valuations match sum of associated positions
+        - trend data for KPIs
+    - Tables:
+        - all rows with suspicous/incorrect data as table, with optional .csv download option
+            - Current Values
+            - Discrepancies in order valuation and position sum
+            - orders exceeding 50k total value
+        
+        """
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
         if comparison_df is None or comparison_df.empty:
@@ -48,7 +84,25 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
 
     st.subheader("Fehlerverlauf im Vergleich")
     
+    # --- Trends for KPIs ---
     def prepare_trend_data(df, label, time_col="CRMEingangszeit"):
+        """Helper function grouping values of passed df into monthly intervalls.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame containing computed metric values over time.
+        label : string
+            label for aggregated data, written to column 'Kategorie' of the returned df
+        time_col : str, optional
+            label of the timestamp column in df, by default "CRMEingangszeit"
+
+        Returns
+        -------
+        pandas.DataFrame
+            df with metric values aggregated by month. Has a column 'Kategorie' for labels. This returns an empty df if no timestamp was passed.
+            
+        """
         if df is None or df.empty or time_col not in df.columns:
             return pd.DataFrame()
         
@@ -126,7 +180,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
 
     st.markdown("---")
 
-    # --- CHARTS ---
+    # --- Tables ---
     chart_col1, chart_col2 = st.columns(2)
 
 # Welche Spalten sollten noch rein um die Daten sinnvoll prüfen zu können? Aktuell kein Spaltenname da Series
