@@ -101,7 +101,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Anzahl Fälle", value=f"{count_val:,}".replace(",", "."), delta=delta, delta_color="inverse", help="Anzahl der Fälle, in denen Forderung_Netto < Einigung_Netto")
-        c2.metric("Quote", f"{(count_val / total_rows) * 100:.2f}%" if total_rows else "NA", help="Anteil der fehlerhaften Fälle am gesamten Datensatz")
+        c2.metric("Anteil am Datensatz", f"{(count_val / total_rows) * 100:.2f}%" if total_rows else "NA", help="Anteil der fehlerhaften Fälle am gesamten Datensatz")
         c3.metric("Ø Abweichung", f"{avg_val:,.2f} €", help="Durchschnittliche Differenz zwischen Forderung_Netto und Einigung_Netto bei fehlerhaften Fällen")
 
         # Berechnung P95 für Chart-Skalierung
@@ -163,11 +163,11 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
 
     with tab2:
         st.subheader("Rabatt-Logik & Vorzeichenprüfung")
-        st.caption("Fälle, in denen Rabatte unplausibel sind. (Rabatte werden anhand von Keywords erkannt) Vorzeichen-Checks nur bei Einigung_netto.")
-        c1, c2 = st.columns(2)
+        st.caption("Fälle, in denen Rabatte unplausibel sind (Rabatte werden anhand von Keywords erkannt)  \n Vorzeichen-Checks werden nur bei Einigung_netto durchgeführt.")
+        c1, c2, c3 = st.columns(3)
         c1.metric("Unplausible Positionen", value=f"{discount_errors:,}".replace(",", "."), delta=get_delta("count_discount_logic_errors"), delta_color="inverse", help="Anzahl der Positionen mit unplausiblen Rabatten")
-
         c2.metric("Anteil an Positionen", f"{(discount_errors / total_df2) * 100:.2f}%" if total_df2 else "NA", help="Prozentualer Anteil der unplausiblen Positionen am gesamten Datensatz")
+        c3.metric("Gesamt Positionen", value=f"{total_df2:,}".replace(",", "."), help="Gesamtanzahl der Positionen im Datensatz")
 
         if not disc_stats.empty:
             bar = alt.Chart(disc_stats).mark_bar(color="#E4572E").encode(
@@ -193,10 +193,11 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
 
     with tab3:
             st.subheader("Erkannte Proforma-Belege")
-            st.caption("Aufträge, die als Proforma-Belege identifiziert wurden. (Performa-Beleg = Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.)")
-            c1, c2 = st.columns(2)
+            st.caption("Aufträge, die als Proforma-Belege identifiziert wurden. (Proforma-Beleg = Aufträge mit Einigung_Netto zwischen 0,01 und 1 €.)")
+            c1, c2, c3 = st.columns(3)
             c1.metric("Anzahl Belege", value=f"{proforma_count:,}".replace(",", "."), delta=get_delta("count_proforma_receipts"), delta_color="inverse", help="Anzahl der als Proforma-Belege identifizierten Aufträge")
             c2.metric("Anteil an Aufträgen", f"{(proforma_count / total_df1) * 100:.2f}%" if total_df1 else "NA", help="Prozentualer Anteil der Proforma-Belege am gesamten Auftragsdatensatz")
+            c3.metric("Gesamt Aufträge", value=f"{total_df1:,}".replace(",", "."), help="Gesamtanzahl der Aufträge im Datensatz")
 
             if not proforma_df.empty:
                 if "CRMEingangszeit" in proforma_df.columns:
@@ -296,6 +297,6 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
         key="kundengruppe_multiselect"
     )
         st.dataframe(outliers_by_damage[outliers_by_damage["Kundengruppe"].isin(selected_kundengruppe)] if selected_kundengruppe else outliers_by_damage)
-        st.caption("Gibt die Aufträge aus deren Forderungssumme gruppiert nach Schadensart im 1. oder 99. Perzentil sind.")
+        st.caption("Gibt die Aufträge aus, deren Forderungssumme gruppiert nach Schadensart im 1. oder 99. Perzentil sind.")
 
     st.markdown("---")

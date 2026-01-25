@@ -136,8 +136,8 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
 
     # Chart 2: Fehlerhäufigkeit nach Wochentag und Stunde (Heatmap)
     with chart_col2:
-        st.subheader("Fehlerquote nach Wochentag und Stunde")
-        st.caption("Diese Heatmap visualisiert Konzentrationen von Fehlern im Zeitverlauf. Je intensiver der Rotton, desto höher war die prozentuale Fehlerquote am jeweiligen Wochentag zu der entsprechenden Uhrzeit.")
+        st.subheader("Null-Ratios nach Wochentag und Stunde")
+        st.caption("Diese Heatmap visualisiert Konzentrationen der Null-Ratios im Zeitverlauf. Je intensiver der Rotton, desto höher war die prozentuale Fehlerquote am jeweiligen Wochentag zu der entsprechenden Uhrzeit.")
         err_df = metrics_df1.get("error_frequency_weekday_hour", None)
         if isinstance(err_df, pd.DataFrame) and not err_df.empty:
             weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -162,7 +162,7 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df,
                 .properties(height=240, width="container")
             )
             st.altair_chart(heat, width="stretch")
-            st.caption("Hinweis: PLZ VN wird von OCR nicht gesetzt, daher extrem hohe Fehlerquoten an Wochenenden und nachts.")
+            st.caption("Hinweis: PLZ VN wird von OCR nicht gesetzt, daher extrem hohe Quoten an Wochenenden und nachts.")
 
         else:
             st.info("Keine Fehlerfrequenz-Daten verfügbar.")
