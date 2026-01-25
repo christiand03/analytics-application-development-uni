@@ -236,7 +236,7 @@ con.execute("CREATE OR REPLACE TABLE metric_fn_details_df2 AS SELECT * FROM fn_d
 print("--- Step 8: Calculating overall Issue Metric ---")
 numeric_issues = len(zeitwert) + len(df_above_50k) + len(df_mismatch)
 text_issues = test_data_count + len(df_outliers_true) + len(df_semantic)
-plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2) + empty_orders_count + len(outliers_by_damage)
+plausi_issues = plausibility_error_count_df + plausibility_error_count_df2 + discount_logic_errors + proforma_count + len(fn_details1) + len(fn_details2) + empty_orders_count
 overall_issues = numeric_issues + text_issues + plausi_issues + len(df_uniq_problem)
 
 issues = {
