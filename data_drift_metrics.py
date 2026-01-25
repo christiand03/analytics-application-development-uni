@@ -75,7 +75,10 @@ def datetime_slice_mask(df, start_date, end_date):
 
 
 def data_drift_evaluation(df, start_date_reference, end_date_reference, start_date_eval, end_date_eval):
-    """Uses the standard preset in the evidentlyai framework to evaluate data drift between two samples (chosen by time interval) from the passed DataFrame. The resulting Snapshot object is saved as html for easy embedding.
+    """Generates a evidentlyAI data drift report Snapshot object.
+    
+      This function uses the standard preset in the evidentlyai framework to evaluate data drift between two samples (chosen by time interval) from the passed DataFrame.
+      The resulting Snapshot object is saved as html for easy embedding.
 
     Parameters
     ----------
@@ -90,6 +93,12 @@ def data_drift_evaluation(df, start_date_reference, end_date_reference, start_da
     end_date_eval : datetime
         starting datetime of the evaluated dataset
     
+    Notes
+    -----
+    Evidently's default preset uses the Wasserstein distance for numerical features and the Jensen-Shannon divergence for data sets with >1000 observations.
+    If you wish to customize methods used or the threshold for drift detection, simply add the respective arguments for the DataDriftPreset class as 
+    detailed in https://docs.evidentlyai.com/metrics/customize_data_drift. 
+
     """
     #check if start and end dates are in chronologicl order, switch if needed
     start_date_reference, end_date_reference = check_start_end_date(start_date_reference, end_date_reference)
@@ -114,7 +123,9 @@ def data_drift_evaluation(df, start_date_reference, end_date_reference, start_da
                           ".html")
     if 'Menge' in df.columns: #evaluates true if Positionsdaten-df was passed
         report = Report([
+            #add arguments here to customize reports
             DataDriftPreset(
+                #consider only the following columns 
                 columns=["Menge","Menge_Einigung", "EP", "EP_Einigung", "Forderung_Netto", "Einigung_Netto"]
                 )
         ])

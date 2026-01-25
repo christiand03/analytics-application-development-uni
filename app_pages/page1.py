@@ -3,7 +3,43 @@ import pandas as pd
 import altair as alt
 
 def show_page(metrics_df1, metrics_df2, metrics_combined, pot_df, comparison_df, issues_df):
+    """This function renders page 1 of 5 of the dashboard. 
+    
+    Page 1 is the dashboard landing page.
+    For a detailed list of diplayed info, refer to the 'Notes' section.
 
+    Parameters
+    ----------
+    metrics_df1 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order data only
+    metrics_df2 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning position data only
+    metrics_combined : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order and position data
+    comparison_df : pandas.DataFrame
+        DataFrame with metric value changes over time
+    issues_df : bool
+        DataFrame containing values for all metrics concerning potentially invalid data points
+    Returns
+    -------
+    void        
+
+    Notes
+    -----
+    This page contains the following information:
+    
+    - KPIs
+        - total number of issues and discrepancies found
+        - row counts for both order and position data sets
+        - ratio of null values in both data sets
+        - amount of pro forma orders
+        - amount of orders without associated positions
+    - Tables:
+        - null values per column (top *n* columns) 
+        - error frequencies aggregated over time of day & weekdays
+        - trend of position count per order over time (monthly avg.)
+    """
+   
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
         if comparison_df is None or comparison_df.empty:

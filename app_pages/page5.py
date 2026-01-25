@@ -6,7 +6,19 @@ import duckdb
 from pathlib import Path
 
 @st.cache_data
-def load_df(df_type): #wäre es schneller die nulls schon hier im SQL zu droppen?
+def load_df(df_type): 
+    """Loads the full specified DataFrame from the database into cache.
+
+    Parameters
+    ----------
+    df_type : string
+        expects df for order data, df2 for position data
+
+    Returns
+    -------
+    pandas.DataFrame
+        order or position DataFrame
+    """
     con = duckdb.connect("resources/dashboard_data.duckdb", read_only=True)
     if df_type == "df":
         try:
@@ -21,6 +33,12 @@ def load_df(df_type): #wäre es schneller die nulls schon hier im SQL zu droppen
     return df
 
 def fetch_reports_table():
+    """Generates a DataFrame containing the timestamp ranges of all saved reports and the respective data source.
+
+    Returns
+    -------
+    pandas.DataFrame   
+    """
     reports_folder = Path("resources/reports")
     filenames = [f.stem for f in reports_folder.iterdir() if f.is_file()]
     split = [name.split("_")for name in filenames]
@@ -32,12 +50,26 @@ def fetch_reports_table():
     return df_reports
     
 def refresh_table():
+    #helper function to update the report listing as displayed in the dashboard 
      st.session_state.reports_table = fetch_reports_table()
 
 def show_page():
+    """This function renders page 5 of 5 of the dashboard.
+
+    Page 5 lets you generate data drift reports and embeds them.
+    Generated reports can be found at ./resources/reports .
+    
+
+    Notes
+    -----
+
+    For implementation details of the report generation process and customization options, please refer to data_drift_metrics.py
+    and it's documentation.     
+    """
     con = duckdb.connect("resources/dashboard_data.duckdb", read_only=True)
    
     try:
+        #limit date selection options to observed timestamp ranges
         min_date = con.execute("SELECT MIN(CRMEingangszeit) FROM auftragsdaten").fetchone()[0].date()
         max_date = con.execute("SELECT MAX(CRMEingangszeit) FROM auftragsdaten").fetchone()[0].date()
     finally:
@@ -49,7 +81,7 @@ def show_page():
     
     
     form_column, tab_column = st.columns(2)
-    dynamic_reset_ph = tab_column.empty()
+    dynamic_reset_ph = tab_column.empty() # forces streamlit to refresh the report list on reload
     with form_column:
         #Date-Picker, für Referenzset und Evalset, Quelldatenset
         with st.expander("Reportauswahl", width=750):
@@ -82,7 +114,7 @@ def show_page():
                 submitted = st.form_submit_button("Report anzeigen")
 
                 if submitted:
-                #Check für den Ordnerpfad
+                #gives feedback on selected report file location
                     st.write("Pfad zum Report:")
                     if source_designation == "Auftragsdaten":
                             source_type = "df"
@@ -111,13 +143,13 @@ def show_page():
          st.stop()
 
          
-    try: #versuche den gewünschten report zu finden
+    try: #try loading the selected report from disk 
         if not force_reload:
             report_html = open(path_to_report, "r", encoding="utf-8").read()
             components.html(report_html, height= 1000, scrolling=True)
         else:
              raise FileNotFoundError    
-    except FileNotFoundError: #erstelle fehlenden report, dazu feedback
+    except FileNotFoundError: #if loading fails or recompute was selected, compute and save report as html
         with st.empty():
             source_df = load_df(source_type).dropna(subset=['CRMEingangszeit'])
             st.write("Report ist noch nicht vorhanden und wird erstellt. Dies kann einige Momente dauern...")
@@ -130,6 +162,7 @@ def show_page():
         report_html = open(path_to_report, "r", encoding="utf-8").read()    
         components.html(report_html, height= 1000, scrolling=True)
     
+    #refresh reports list after report generation
     dynamic_reset_ph.empty()
     with tab_column:
         with st.expander("Verfügbare Reports", width= 750):
