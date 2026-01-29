@@ -94,17 +94,16 @@ Es wird Python 3.12+ empfohlen.
 
     Erstelle eine `requirements.txt` mit folgendem Inhalt (basierend auf den Imports):
     ```text
-    pandas
-    numpy
-    duckdb
-    streamlit
-    streamlit-option-menu
-    altair
-    evidently
-    sentence-transformers
-    torch
-    pyarrow
-    fastparquet
+    altair==5.5.0
+    duckdb==1.4.3
+    evidently==0.7.20
+    ipython==8.12.3
+    numpy==2.3.5
+    pandas==2.3.3
+    sentence-transformers==5.2.0
+    streamlit==1.51.0
+    streamlit-option-menu==0.4.0
+    torch==2.9.1+cu126
     ```
 
     Installiere die Pakete:
