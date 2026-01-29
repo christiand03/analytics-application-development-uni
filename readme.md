@@ -81,6 +81,7 @@ Dieses Projekt setzt auf einen modernen, auf Data-Science ausgerichteten Technol
 ├── metrics.py                  # Bibliothek für alle Berechnungsfunktionen
 ├── data_drift_metrics.py       # Logik für Evidently AI Reports
 ├── db_dashboard.py             # Hauptanwendung (Streamlit App)
+├── dashboard.py                # Legacy Version (Streamlit App)
 └── requirements.txt            # Python Abhängigkeiten
 ```
 
