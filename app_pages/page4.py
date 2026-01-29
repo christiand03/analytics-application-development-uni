@@ -3,7 +3,46 @@ import pandas as pd
 import altair as alt
 
 def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
+    """This function renders page 4 of 5 of the dashboard. 
+    
+    Page 4 visualizes metrics concerning the data that seems erroneous or implausible according to rules-based heuristics .
+    For a detailed list, refer to the 'Notes' section.
 
+    Parameters
+    ----------
+    metrics_df1 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order data only
+    metrics_df2 : pandas.DataFrame
+        DataFrame containing values for all metrics concerning position data only
+    metrics_combined : pandas.DataFrame
+        DataFrame containing values for all metrics concerning order and position data
+    comparison_df : pandas.DataFrame
+        DataFrame with metric value changes over time
+    issues_df : bool
+        DataFrame containing values for all metrics concerning potentially invalid data points
+    Returns
+    -------
+    void
+
+    Notes
+    -----
+    This page contains the following information:
+    
+    - KPIs
+        - aggregated error amount and inconsistencies according to heuristics
+      
+    - Tabs
+        - Forderung > Einigung: All orders that have a higher final payout than initial ask are listed here
+        - Rabatt/Vorzeichen: All entries where a discount position is not correctly reflected in numerical columns overall
+        - Proforma-Belege: all orders with a symbolic total volume of 0,1-1€  
+        - Validierung Voreichenlogik: Recognizes simple, single errors in the signum of the 'Forderung', 'Eingiung' and 'Empfehlung' columns, for both data set types
+        - Aufträge ohne Positionen: reports all order entries that do not have any associated positions
+        - Ausreißer Forderungssumme: a more detailed version of the >50k€ metric, this entry shows all entries that are outside ±3 sigma. Optional grouping is available.   
+          
+        
+         
+
+    """
     # Helperfunction to get delta from comparison_df
     def get_delta(metric_name):
         if comparison_df is None or comparison_df.empty:
@@ -16,7 +55,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
             return f"{val:+.2f}%"
         return None
 
-
+    #---- Load metrics ----
     plausi_df1 = metrics_df1.get("plausi_forderung_einigung_df")
     plausi_list_df1 = plausi_df1['Diff']
     plausi_count_df1 = metrics_df1.get("plausi_forderung_einigung_count", 0)
@@ -52,6 +91,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
     empty_orders = metrics_df1.get("empty_orders_count", 0)
     outliers_by_damage = metrics_df1.get("outliers_by_damage")
 
+    #--- KPIs ---
     st.markdown("### Plausibilitäts-Checks & Logikfehler")
     kpi_cols = st.columns(1)
     with kpi_cols[0]:
@@ -64,6 +104,7 @@ def show_page(metrics_df1, metrics_df2, comparison_df, issues_df):
         )
         st.caption(f"Anteil: {anteil_plausi_issues:.2f}% an beiden Datensätzen")
 
+    # --- Detail-Charts ---
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "Logikfehler: Forderung < Einigung",
         "Rabatt/Vorzeichen",
