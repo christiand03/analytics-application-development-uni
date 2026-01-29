@@ -61,6 +61,8 @@ Dieses Projekt setzt auf einen modernen, auf Data-Science ausgerichteten Technol
 
 ```text
 .
+├── Notizen/
+│   └── Dokumentation AAD       # Dokumentaion zum Datensatz
 ├── resources/                  # Daten-Ordner
 │   ├── Auftragsdaten           # Raw Parquet Datei
 │   ├── Positionsdaten          # Raw Parquet Datei
