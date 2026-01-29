@@ -7,6 +7,7 @@ Das System nutzt **DuckDB** als performante Backend-Datenbank und **Evidently AI
 ## Inhaltsverzeichnis
 
 - [Features](#features)
+- [Tech Stack](#tech-stack)
 - [Projektstruktur](#projektstruktur)
 - [Voraussetzungen & Installation](#voraussetzungen--installation)
 - [Datenvorbereitung](#datenvorbereitung)
@@ -27,6 +28,34 @@ Das System nutzt **DuckDB** als performante Backend-Datenbank und **Evidently AI
 *   **Semantische Analyse:** KI-gestützte Prüfung (mittels `SentenceTransformer`), ob das angegebene Gewerk zum Namen des Handwerkers passt.
 *   **Data Drift:** Erkennung von Veränderungen in der Datenverteilung über die Zeit (Data Drift) mittels Evidently AI.
 *   **Trendanalyse:** Vergleich aktueller Metriken mit dem vorherigen Datenbank-Stand (automatisches Backup/Rotation der DB).
+
+## Tech Stack
+
+Dieses Projekt setzt auf einen modernen, auf Data-Science ausgerichteten Technologie-Stack, um hohe Performance bei der Verarbeitung lokaler Daten zu gewährleisten.
+
+### **Core & Data Processing**
+*   **Python 3.12+**: Die Basisprogrammiersprache.
+*   **Pandas & NumPy**: Für die grundlegende Datenmanipulation, Bereinigung und numerische Operationen (ETL-Prozess).
+*   **Apache Parquet**: Als Speicherformat für die Rohdaten (hochkomprimiertes, spaltenbasiertes Format).
+
+### **Datenbank & Storage**
+*   **DuckDB**: Eine In-Process SQL OLAP-Datenbank.
+    *   Dient als performanter Zwischenspeicher für die bereinigten Daten und vorberechneten Metriken.
+    *   Ermöglicht extrem schnelle Aggregationen für das Dashboard, ohne dass ein externer Datenbank-Server benötigt wird.
+
+### **Machine Learning & AI**
+*   **Sentence Transformers (Hugging Face)**:
+    *   Modell: `paraphrase-multilingual-MiniLM-L12-v2`.
+    *   Wird genutzt, um semantische Ähnlichkeiten zwischen Handwerkernamen und Gewerken zu berechnen (Vektorisierung und Cosine-Similarity).
+*   **PyTorch**: Backend für die Sentence Transformers (nutzt GPU/CUDA falls verfügbar, sonst CPU).
+
+### **Data Quality & Monitoring**
+*   **Evidently AI**: Framework zur Erkennung von Data Drift (Veränderung der Datenverteilung über die Zeit) und Generierung statischer HTML-Reports.
+
+### **Frontend & Visualisierung**
+*   **Streamlit**: Framework für das Dashboard. Ermöglicht Interaktivität und Caching (`@st.cache_data`) für eine flüssige User Experience.
+*   **Altair**: Deklarative Bibliothek zur Erstellung der interaktiven Diagramme und Heatmaps im Dashboard.
+*   **Streamlit Option Menu**: Für die moderne Navigation innerhalb der App.
 
 ## Projektstruktur
 
@@ -119,7 +148,7 @@ streamlit run db_dashboard.py
 
 *(Hinweis: `Dashboard.py` ist eine Legacy-Variante, die Berechnungen On-The-Fly durchführt und weniger performant ist).*
 
-## 📊 Dashboard-Bereiche
+## Dashboard-Bereiche
 
 Das Dashboard ist in 5 Bereiche unterteilt:
 
