@@ -184,7 +184,6 @@ def show_page(metrics_df1, metrics_df2, metrics_combined, comparison_df, issues_
     # --- Tables ---
     chart_col1, chart_col2 = st.columns(2)
 
-# Welche Spalten sollten noch rein um die Daten sinnvoll prüfen zu können? Aktuell kein Spaltenname da Series
     with chart_col1:
         st.subheader("Inkorrekte Zeitwerte:")
         st.caption("Auflistung aller Aufträge mit inkorrekten Zeitwerten in der Zeitwert-Spalte.")
